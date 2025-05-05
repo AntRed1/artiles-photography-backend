@@ -87,5 +87,3 @@ src/main/java/com/artiles_photography_backend/
    ```bash
    git clone https://github.com/AntRed1/artiles-photography-backend.git
    cd artiles-photography-backend
-
-```
