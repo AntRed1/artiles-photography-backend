@@ -1,0 +1,42 @@
+# Spring Boot
+HELP.md
+target/
+logs/
+
+# Excepciones para Maven wrapper
+!.mvn/wrapper/maven-wrapper.jar
+
+# Si usas submódulos con su propio target o build
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Eclipse / Spring Tool Suite (STS)
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+*.log.*
