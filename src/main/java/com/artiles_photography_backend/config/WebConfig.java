@@ -1,4 +1,4 @@
-package com.artiles_photography_backend.configurations;
+package com.artiles_photography_backend.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;

@@ -1,4 +1,4 @@
-package com.artiles_photography_backend.configurations;
+package com.artiles_photography_backend.config;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,38 +27,44 @@ import com.artiles_photography_backend.repository.PhotographyServiceRepository;
 import com.artiles_photography_backend.repository.TestimonialRepository;
 
 /**
- *
  * @author arojas
+ *         Inicializa datos de prueba en la base de datos si las tablas están
+ *         vacías.
  */
 @Component
 public class DataInitializer implements CommandLineRunner {
 
-        @Autowired
-        private GalleryRepository galleryRepository;
+        private final GalleryRepository galleryRepository;
+        private final PhotographyPackageRepository photographyPackageRepository;
+        private final TestimonialRepository testimonialRepository;
+        private final ContactInfoRepository contactInfoRepository;
+        private final AboutUsRepository aboutUsRepository;
+        private final PhotographyServiceRepository photographyServiceRepository;
+        private final LegalRepository legalRepository;
+        private final CarouselImageRepository carouselImageRepository;
+        private final ConfigurationRepository configurationRepository;
 
         @Autowired
-        private PhotographyPackageRepository photographyPackageRepository;
-
-        @Autowired
-        private TestimonialRepository testimonialRepository;
-
-        @Autowired
-        private ContactInfoRepository contactInfoRepository;
-
-        @Autowired
-        private AboutUsRepository aboutUsRepository;
-
-        @Autowired
-        private PhotographyServiceRepository photographyServiceRepository;
-
-        @Autowired
-        private LegalRepository legalRepository;
-
-        @Autowired
-        private CarouselImageRepository carouselImageRepository;
-
-        @Autowired
-        private ConfigurationRepository configurationRepository;
+        public DataInitializer(
+                        GalleryRepository galleryRepository,
+                        PhotographyPackageRepository photographyPackageRepository,
+                        TestimonialRepository testimonialRepository,
+                        ContactInfoRepository contactInfoRepository,
+                        AboutUsRepository aboutUsRepository,
+                        PhotographyServiceRepository photographyServiceRepository,
+                        LegalRepository legalRepository,
+                        CarouselImageRepository carouselImageRepository,
+                        ConfigurationRepository configurationRepository) {
+                this.galleryRepository = galleryRepository;
+                this.photographyPackageRepository = photographyPackageRepository;
+                this.testimonialRepository = testimonialRepository;
+                this.contactInfoRepository = contactInfoRepository;
+                this.aboutUsRepository = aboutUsRepository;
+                this.photographyServiceRepository = photographyServiceRepository;
+                this.legalRepository = legalRepository;
+                this.carouselImageRepository = carouselImageRepository;
+                this.configurationRepository = configurationRepository;
+        }
 
         @Override
         public void run(String... args) throws Exception {
@@ -138,40 +144,52 @@ public class DataInitializer implements CommandLineRunner {
                         testimonialRepository.saveAll(List.of(
                                         new Testimonial(null, "Ana Pérez", 5,
                                                         "Las fotos de mi quinceañera quedaron espectaculares. ¡Totalmente recomendado!",
-                                                        LocalDateTime.of(2025, 4, 15, 0, 0)),
+                                                        LocalDateTime.of(2025, 4, 15, 0, 0), "Mobile Chrome",
+                                                        "192.168.1.1", "Santo Domingo, Dominican Republic", true),
                                         new Testimonial(null, "Juan y María", 5,
                                                         "Contratamos sus servicios para nuestra boda y quedamos encantados.",
-                                                        LocalDateTime.of(2025, 3, 22, 0, 0)),
+                                                        LocalDateTime.of(2025, 3, 22, 0, 0), "Desktop Firefox",
+                                                        "192.168.1.2", "Santo Domingo, Dominican Republic", true),
                                         new Testimonial(null, "Laura Gómez", 4,
                                                         "Excelente servicio para las fotos de graduación de mi hijo.",
-                                                        LocalDateTime.of(2025, 2, 5, 0, 0))));
+                                                        LocalDateTime.of(2025, 2, 5, 0, 0), "Tablet Safari",
+                                                        "192.168.1.3", "Santo Domingo, Dominican Republic", true)));
                 }
 
                 // Contact Info
                 if (contactInfoRepository.count() == 0) {
                         contactInfoRepository.save(new ContactInfo(
                                         null,
-                                        "(809) 555-7890",
+                                        "(829) 645-1718",
                                         "info@artilesphotography.com",
-                                        "Av. Winston Churchill #123, Plaza Central, Local 45, Santo Domingo, República Dominicana",
-                                        "18095557890",
-                                        "https://facebook.com/artilesphotography",
-                                        "https://instagram.com/artilesphotography",
+                                        "Casita de princesa, Quinceañera, Plaza Privada, Av 27 de Febrero esquina privada, Santo Domingo",
+                                        "+1 (829) 645-1718",
+                                        "https://www.facebook.com/people/Casitas-de-princesas-RD/61574858705513/",
+                                        "https://www.instagram.com/artilesfotograf",
                                         "https://twitter.com/artilesphoto",
-                                        "https://tiktok.com/@artilesphotography",
-                                        "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3783.055!2d-69.938093!3d18.475174!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTjCsDI4JzMwLjYiTiA2OcKwNTYnMTYuOCJX!5e0!3m2!1sen!2sus!4v1698765432101"));
+                                        "https://www.tiktok.com/@artilesfotograf",
+                                        "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1892.3236295809074!2d-69.96382959187031!3d18.45431823194794!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8eaf8b69b1b0ca95%3A0xf15d46b937405300!2sCasita%20de%20princesa%2C%20Quincea%C3%B1era!5e0!3m2!1ses!2sdo!4v1746545688095!5m2!1ses!2sdo"));
                 }
 
                 // About Us
                 if (aboutUsRepository.count() == 0) {
-                        aboutUsRepository.save(new AboutUs(
-                                        null,
-                                        "Sobre Nosotros",
-                                        "Artiles Photography Studio se dedica a capturar los momentos más importantes de tu vida con creatividad y profesionalismo.",
-                                        List.of("Quinceañeras", "Bodas", "Graduaciones", "Familias", "Bebés",
-                                                        "Eventos"),
-                                        List.of("fa-camera", "fa-heart", "fa-graduation-cap", "fa-users", "fa-baby",
-                                                        "fa-calendar")));
+                        aboutUsRepository.saveAll(List.of(
+                                        new AboutUs(
+                                                        null,
+                                                        "Sobre Nosotros",
+                                                        "Artiles Photography Studio se dedica a capturar los momentos más importantes de tu vida con creatividad y profesionalismo.",
+                                                        List.of("Quinceañeras", "Bodas", "Graduaciones", "Familias",
+                                                                        "Bebés", "Eventos"),
+                                                        List.of("fa-camera", "fa-heart", "fa-graduation-cap",
+                                                                        "fa-users", "fa-baby", "fa-calendar")),
+
+                                        // Nuevo registro que puedes agregar
+                                        new AboutUs(
+                                                        null,
+                                                        "Misión",
+                                                        "Nuestra misión es ofrecer un servicio fotográfico único que capture los momentos más preciados de nuestros clientes con un enfoque en la calidad y la satisfacción.",
+                                                        List.of("Bodas", "Eventos", "Bautizos"),
+                                                        List.of("fa-clipboard", "fa-handshake", "fa-bell"))));
                 }
 
                 // Photography Services
@@ -195,8 +213,10 @@ public class DataInitializer implements CommandLineRunner {
                 // Legal Documents
                 if (legalRepository.count() == 0) {
                         legalRepository.saveAll(List.of(
-                                        new Legal(null, "PRIVACY", "Política de privacidad del estudio..."),
-                                        new Legal(null, "TERMS", "Términos y condiciones del servicio...")));
+                                        new Legal(null, "PRIVACY",
+                                                        "En Artiles Photography Studio, respetamos tu privacidad. Recopilamos información personal como nombre, correo electrónico, y datos de contacto solo con tu consentimiento. También podemos recopilar información técnica como el dispositivo, dirección IP, y ubicación geográfica para mejorar nuestros servicios y analizar el uso de nuestro sitio web. No compartimos tus datos con terceros sin tu permiso, salvo lo requerido por ley. Consulta nuestra política completa en nuestro sitio web."),
+                                        new Legal(null, "TERMS",
+                                                        "Al usar nuestros servicios, aceptas nuestros términos y condiciones. Nos reservamos el derecho de modificar estos términos en cualquier momento.")));
                 }
 
                 // Configuration

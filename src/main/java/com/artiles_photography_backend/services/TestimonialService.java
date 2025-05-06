@@ -8,13 +8,16 @@ import org.springframework.stereotype.Service;
 import com.artiles_photography_backend.models.Testimonial;
 import com.artiles_photography_backend.repository.TestimonialRepository;
 
+import jakarta.transaction.Transactional;
+
 /**
  *
  * @author arojas
  *         * Servicio para manejar operaciones relacionadas con Testimonial.
- * 
+ *
  */
 @Service
+@Transactional
 public class TestimonialService {
 
     private final TestimonialRepository testimonialRepository;
@@ -25,16 +28,19 @@ public class TestimonialService {
     }
 
     /**
-     * Obtiene todos los testimonios.
+     * Obtiene todos los testimonios habilitados.
      */
     public List<Testimonial> getAllTestimonials() {
-        return (List<Testimonial>) testimonialRepository.findAll();
+        return testimonialRepository.findByEnableTrue();
     }
 
     /**
      * Guarda un testimonio.
      */
     public Testimonial saveTestimonial(Testimonial testimonial) {
+        if (testimonial.getId() != null) {
+            throw new IllegalArgumentException("El ID del testimonio debe ser nulo para nuevos registros");
+        }
         return testimonialRepository.save(testimonial);
     }
 }

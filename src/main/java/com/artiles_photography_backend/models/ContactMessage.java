@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,6 +32,7 @@ public class ContactMessage {
 	private String name;
 
 	@Column(nullable = false)
+	@Email
 	private String email;
 
 	private String phone;
@@ -47,7 +49,8 @@ public class ContactMessage {
 	@Column(nullable = false)
 	private String userAgent;
 
-	@Column(nullable = false)
+	@Column(nullable = false, updatable = false)
+	@org.hibernate.annotations.CreationTimestamp
 	private LocalDateTime createdAt;
 
 }

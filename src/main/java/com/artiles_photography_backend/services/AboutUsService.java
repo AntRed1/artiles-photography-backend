@@ -11,7 +11,7 @@ import com.artiles_photography_backend.repository.AboutUsRepository;
  *
  * @author arojas
  *         * Servicio para manejar operaciones relacionadas con AboutUs.
- * 
+ *
  */
 @Service
 public class AboutUsService {
@@ -23,16 +23,14 @@ public class AboutUsService {
         this.aboutUsRepository = aboutUsRepository;
     }
 
-    /**
-     * Obtiene la información "Sobre Nosotros".
-     */
     public AboutUs getAboutUs() {
         return aboutUsRepository.findAll().stream().findFirst().orElse(null);
     }
 
-    /**
-     * Guarda la información "Sobre Nosotros".
-     */
+    public AboutUs getAboutUsByTitle(String title) {
+        return aboutUsRepository.findByTitle(title);
+    }
+
     public AboutUs saveAboutUs(AboutUs aboutUs) {
         return aboutUsRepository.save(aboutUs);
     }
