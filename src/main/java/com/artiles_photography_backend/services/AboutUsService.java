@@ -1,8 +1,6 @@
 
 package com.artiles_photography_backend.services;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +10,8 @@ import com.artiles_photography_backend.repository.AboutUsRepository;
 /**
  *
  * @author arojas
+ *         * Servicio para manejar operaciones relacionadas con AboutUs.
+ * 
  */
 @Service
 public class AboutUsService {
@@ -23,15 +23,16 @@ public class AboutUsService {
         this.aboutUsRepository = aboutUsRepository;
     }
 
-    public List<AboutUs> getAllAboutUs() {
-        return (List<AboutUs>) aboutUsRepository.findAll();
+    /**
+     * Obtiene la información "Sobre Nosotros".
+     */
+    public AboutUs getAboutUs() {
+        return aboutUsRepository.findAll().stream().findFirst().orElse(null);
     }
 
-    public AboutUs getAboutUsById(Long id) {
-        return aboutUsRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("AboutUs not found with id: " + id));
-    }
-
+    /**
+     * Guarda la información "Sobre Nosotros".
+     */
     public AboutUs saveAboutUs(AboutUs aboutUs) {
         return aboutUsRepository.save(aboutUs);
     }

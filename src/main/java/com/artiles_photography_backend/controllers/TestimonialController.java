@@ -16,20 +16,35 @@ import com.artiles_photography_backend.services.TestimonialService;
 /**
  *
  * @author arojas
+ *         * Controlador REST para manejar peticiones relacionadas con
+ *         Testimonial.
+ * 
  */
 @RestController
 @RequestMapping("/api/testimonials")
 public class TestimonialController {
-	@Autowired
-	private TestimonialService testimonialService;
 
-	@GetMapping
-	public ResponseEntity<List<Testimonial>> getAllTestimonials() {
-		return ResponseEntity.ok(testimonialService.getAllTestimonials());
+	private final TestimonialService testimonialService;
+
+	@Autowired
+	public TestimonialController(TestimonialService testimonialService) {
+		this.testimonialService = testimonialService;
 	}
 
+	/**
+	 * Obtiene todos los testimonios.
+	 */
+	@GetMapping
+	public ResponseEntity<List<Testimonial>> getTestimonials() {
+		List<Testimonial> testimonials = testimonialService.getAllTestimonials();
+		return ResponseEntity.ok(testimonials);
+	}
+
+	/**
+	 * Guarda un nuevo testimonio.
+	 */
 	@PostMapping
-	public ResponseEntity<Testimonial> addTestimonial(@RequestBody Testimonial testimonial) {
-		return ResponseEntity.ok(testimonialService.addTestimonial(testimonial));
+	public ResponseEntity<Testimonial> saveTestimonial(@RequestBody Testimonial testimonial) {
+		return ResponseEntity.ok(testimonialService.saveTestimonial(testimonial));
 	}
 }

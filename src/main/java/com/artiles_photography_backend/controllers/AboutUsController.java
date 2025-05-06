@@ -1,7 +1,5 @@
 package com.artiles_photography_backend.controllers;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +14,7 @@ import com.artiles_photography_backend.services.AboutUsService;
 /**
  *
  * @author arojas
- *         * Controlador REST para manejar peticiones relacionadas con AboutUs.
+ *         Controlador REST para manejar peticiones relacionadas con AboutUs.
  * 
  */
 
@@ -32,15 +30,19 @@ public class AboutUsController {
 	}
 
 	/**
-	 * Obtiene toda la información de AboutUs.
+	 * Obtiene la información "Sobre Nosotros".
 	 */
 	@GetMapping
-	public ResponseEntity<List<AboutUs>> getAllAboutUs() {
-		return ResponseEntity.ok(aboutUsService.getAllAboutUs());
+	public ResponseEntity<AboutUs> getAboutUs() {
+		AboutUs aboutUs = aboutUsService.getAboutUs();
+		if (aboutUs == null) {
+			return ResponseEntity.noContent().build();
+		}
+		return ResponseEntity.ok(aboutUs);
 	}
 
 	/**
-	 * Guarda o actualiza la información de AboutUs.
+	 * Guarda la información "Sobre Nosotros".
 	 */
 	@PostMapping
 	public ResponseEntity<AboutUs> saveAboutUs(@RequestBody AboutUs aboutUs) {

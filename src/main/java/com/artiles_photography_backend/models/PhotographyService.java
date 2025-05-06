@@ -6,7 +6,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  *
@@ -18,24 +20,17 @@ import lombok.Data;
 @Entity
 @Table(name = "photography_services")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class PhotographyService {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false)
+	@Column(nullable = false, unique = true)
 	private String title;
 
 	@Column(nullable = false)
 	private String icon;
 
-	// Constructor por defecto requerido por JPA
-	public PhotographyService() {
-	}
-
-	// Constructor para inicialización en DataInitializer
-	public PhotographyService(String title, String icon) {
-		this.title = title;
-		this.icon = icon;
-	}
 }

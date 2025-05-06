@@ -11,17 +11,30 @@ import com.artiles_photography_backend.repository.LegalRepository;
 /**
  *
  * @author arojas
+ *         * Servicio para manejar operaciones relacionadas con Legal.
+ * 
  */
 @Service
 public class LegalService {
-	@Autowired
-	private LegalRepository legalRepository;
 
-	public List<Legal> getLegalDocuments() {
-		return legalRepository.findAll();
+	private final LegalRepository legalRepository;
+
+	@Autowired
+	public LegalService(LegalRepository legalRepository) {
+		this.legalRepository = legalRepository;
 	}
 
-	public Legal saveLegalDocument(Legal legal) {
+	/**
+	 * Obtiene todos los documentos legales.
+	 */
+	public List<Legal> getAllLegals() {
+		return (List<Legal>) legalRepository.findAll();
+	}
+
+	/**
+	 * Guarda un documento legal.
+	 */
+	public Legal saveLegal(Legal legal) {
 		return legalRepository.save(legal);
 	}
 }

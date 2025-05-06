@@ -16,25 +16,33 @@ import com.artiles_photography_backend.services.GalleryService;
 /**
  *
  * @author arojas
+ *         * Controlador REST para manejar peticiones relacionadas con Gallery.
+ * 
  */
 @RestController
-@RequestMapping("/api/config")
+@RequestMapping("/api/gallery")
 public class GalleryController {
+
+	private final GalleryService galleryService;
+
 	@Autowired
-	private GalleryService galleryService;
-
-	@GetMapping("/gallery")
-	public ResponseEntity<List<Gallery>> getGalleryImages() {
-		return ResponseEntity.ok(galleryService.getGalleryImages());
+	public GalleryController(GalleryService galleryService) {
+		this.galleryService = galleryService;
 	}
 
-	@GetMapping("/carousel")
-	public ResponseEntity<List<Gallery>> getCarouselImages() {
-		return ResponseEntity.ok(galleryService.getCarouselImages());
+	/**
+	 * Obtiene todas las imágenes de la galería.
+	 */
+	@GetMapping
+	public ResponseEntity<List<Gallery>> getAllGalleryImages() {
+		return ResponseEntity.ok(galleryService.getAllGalleryImages());
 	}
 
-	@PostMapping("/gallery")
-	public ResponseEntity<Gallery> saveGalleryImage(@RequestBody Gallery gallery) {
-		return ResponseEntity.ok(galleryService.saveGalleryImage(gallery));
+	/**
+	 * Guarda una nueva imagen en la galería.
+	 */
+	@PostMapping
+	public ResponseEntity<Gallery> saveGallery(@RequestBody Gallery gallery) {
+		return ResponseEntity.ok(galleryService.saveGallery(gallery));
 	}
 }

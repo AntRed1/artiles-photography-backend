@@ -11,17 +11,30 @@ import com.artiles_photography_backend.repository.TestimonialRepository;
 /**
  *
  * @author arojas
+ *         * Servicio para manejar operaciones relacionadas con Testimonial.
+ * 
  */
 @Service
 public class TestimonialService {
-    @Autowired
-    private TestimonialRepository testimonialRepository;
 
-    public List<Testimonial> getAllTestimonials() {
-        return testimonialRepository.findAll();
+    private final TestimonialRepository testimonialRepository;
+
+    @Autowired
+    public TestimonialService(TestimonialRepository testimonialRepository) {
+        this.testimonialRepository = testimonialRepository;
     }
 
-    public Testimonial addTestimonial(Testimonial testimonial) {
+    /**
+     * Obtiene todos los testimonios.
+     */
+    public List<Testimonial> getAllTestimonials() {
+        return (List<Testimonial>) testimonialRepository.findAll();
+    }
+
+    /**
+     * Guarda un testimonio.
+     */
+    public Testimonial saveTestimonial(Testimonial testimonial) {
         return testimonialRepository.save(testimonial);
     }
 }

@@ -11,21 +11,30 @@ import com.artiles_photography_backend.repository.GalleryRepository;
 /**
  *
  * @author arojas
+ *         * Servicio para manejar operaciones relacionadas con Gallery.
+ * 
  */
 @Service
 public class GalleryService {
+
+	private final GalleryRepository galleryRepository;
+
 	@Autowired
-	private GalleryRepository galleryRepository;
-
-	public List<Gallery> getCarouselImages() {
-		return galleryRepository.findByDescriptionContaining("carousel");
+	public GalleryService(GalleryRepository galleryRepository) {
+		this.galleryRepository = galleryRepository;
 	}
 
-	public List<Gallery> getGalleryImages() {
-		return galleryRepository.findByDescriptionContaining("gallery");
+	/**
+	 * Obtiene todas las imágenes de la galería.
+	 */
+	public List<Gallery> getAllGalleryImages() {
+		return (List<Gallery>) galleryRepository.findAll();
 	}
 
-	public Gallery saveGalleryImage(Gallery gallery) {
+	/**
+	 * Guarda una imagen en la galería.
+	 */
+	public Gallery saveGallery(Gallery gallery) {
 		return galleryRepository.save(gallery);
 	}
 }

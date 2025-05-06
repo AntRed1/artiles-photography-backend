@@ -1,5 +1,7 @@
 package com.artiles_photography_backend.models;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,18 +17,37 @@ import lombok.NoArgsConstructor;
  * @author arojas
  */
 @Entity
-@Table(name = "configuration")
+@Table(name = "contact_messages")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Configuration {
+public class ContactMessage {
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@Column(nullable = false)
-	private String logoUrl;
+	private String name;
 
-	@Column
-	private String heroBackgroundImage;
+	@Column(nullable = false)
+	private String email;
+
+	private String phone;
+
+	@Column(nullable = false)
+	private String service;
+
+	@Column(nullable = false, columnDefinition = "TEXT")
+	private String message;
+
+	@Column(nullable = false)
+	private String clientIp;
+
+	@Column(nullable = false)
+	private String userAgent;
+
+	@Column(nullable = false)
+	private LocalDateTime createdAt;
+
 }

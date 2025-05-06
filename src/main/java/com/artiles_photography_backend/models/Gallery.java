@@ -8,15 +8,21 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  *
  * @author arojas
+ *         * Entidad que representa una imagen en la galería.
+ *
  */
 @Entity
 @Table(name = "gallery")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Gallery {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,9 +31,10 @@ public class Gallery {
 	@Column(nullable = false)
 	private String imageUrl;
 
-	@Column(columnDefinition = "TEXT")
+	@Column(nullable = false)
 	private String description;
 
-	@Column
+	@Column(nullable = false)
 	private LocalDateTime uploadedAt;
+
 }

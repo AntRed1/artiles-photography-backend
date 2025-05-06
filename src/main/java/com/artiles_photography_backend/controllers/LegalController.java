@@ -16,20 +16,33 @@ import com.artiles_photography_backend.services.LegalService;
 /**
  *
  * @author arojas
+ *         * Controlador REST para manejar peticiones relacionadas con Legal.
+ * 
  */
 @RestController
 @RequestMapping("/api/legal")
 public class LegalController {
-    @Autowired
-    private LegalService legalService;
 
-    @GetMapping
-    public ResponseEntity<List<Legal>> getLegalDocuments() {
-        return ResponseEntity.ok(legalService.getLegalDocuments());
+    private final LegalService legalService;
+
+    @Autowired
+    public LegalController(LegalService legalService) {
+        this.legalService = legalService;
     }
 
+    /**
+     * Obtiene todos los documentos legales.
+     */
+    @GetMapping
+    public ResponseEntity<List<Legal>> getAllLegals() {
+        return ResponseEntity.ok(legalService.getAllLegals());
+    }
+
+    /**
+     * Guarda un nuevo documento legal.
+     */
     @PostMapping
-    public ResponseEntity<Legal> saveLegalDocument(@RequestBody Legal legal) {
-        return ResponseEntity.ok(legalService.saveLegalDocument(legal));
+    public ResponseEntity<Legal> saveLegal(@RequestBody Legal legal) {
+        return ResponseEntity.ok(legalService.saveLegal(legal));
     }
 }
