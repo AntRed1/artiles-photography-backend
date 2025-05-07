@@ -14,20 +14,37 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>artiles-photography-backend</name>
 	<description>Backend for Artiles Photography Studio</description>
-	<url/>
+	<!-- URL del proyecto, apuntando al repositorio GitHub -->
+	<url>https://github.com/AntRed1/artiles-photography-backend</url>
 
+	<!-- Licencia MIT del proyecto -->
 	<licenses>
-		<license/>
+		<license>
+			<name>MIT License</name>
+			<url>https://github.com/AntRed1/artiles-photography-backend/blob/master/LICENSE</url>
+			<distribution>repo</distribution>
+			<comments>Permite uso, copia, modificación y distribución bajo los términos de la licencia MIT.</comments>
+		</license>
 	</licenses>
+
+	<!-- Información de los desarrolladores -->
 	<developers>
-		<developer/>
+		<developer>
+			<name>Anthony Rojas</name>
+			<email>anthonyatras@gmail.com</email>
+			<roles>
+				<role>Lead Developer</role>
+			</roles>
+			<timezone>America/Santo_Domingo</timezone>
+		</developer>
 	</developers>
 
+	<!-- Configuración del control de versiones (SCM) -->
 	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
+		<connection>scm:git:git://github.com/AntRed1/artiles-photography-backend.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/AntRed1/artiles-photography-backend.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/AntRed1/artiles-photography-backend</url>
 	</scm>
 
 	<properties>
@@ -35,7 +52,6 @@
 	</properties>
 
 	<dependencies>
-
 		<!-- Spring Boot Actuator -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -101,14 +117,14 @@
 			<artifactId>caffeine</artifactId>
 		</dependency>
 
-		<!-- Mantén solo esta -->
+		<!-- Cloudinary -->
 		<dependency>
 			<groupId>com.cloudinary</groupId>
 			<artifactId>cloudinary-http44</artifactId>
 			<version>1.38.0</version>
 		</dependency>
 
-		<!-- Asegúrate de tener Apache HttpClient -->
+		<!-- Apache HttpClient -->
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
@@ -127,7 +143,6 @@
 			<artifactId>java-jwt</artifactId>
 			<version>4.4.0</version>
 		</dependency>
-
 	</dependencies>
 
 	<build>
