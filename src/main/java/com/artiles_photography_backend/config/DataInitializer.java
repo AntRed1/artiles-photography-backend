@@ -110,8 +110,10 @@ public class DataInitializer implements CommandLineRunner {
                 if (roleRepository.count() == 0) {
                         logger.info("Inicializando roles...");
                         roleRepository.saveAll(Arrays.asList(
-                                        new Role(null, "ROLE_USER"),
-                                        new Role(null, "ROLE_ADMIN")));
+                                        new Role(null, "USER"),
+                                        new Role(null, "ADMIN"),
+                                        new Role(null, "EDITOR"),
+                                        new Role(null, "VISUALIZADOR")));
                 }
         }
 
@@ -119,12 +121,13 @@ public class DataInitializer implements CommandLineRunner {
         private void initializeAdminUser() {
                 if (userRepository.findByEmail("admin@artilesphoto.com").isEmpty()) {
                         logger.info("Inicializando usuario administrador...");
-                        Role userRole = roleRepository.findByName("ROLE_USER")
-                                        .orElseThrow(() -> new IllegalStateException("Rol ROLE_USER no encontrado"));
-                        Role adminRole = roleRepository.findByName("ROLE_ADMIN")
-                                        .orElseThrow(() -> new IllegalStateException("Rol ROLE_ADMIN no encontrado"));
+                        Role userRole = roleRepository.findByName("USER")
+                                        .orElseThrow(() -> new IllegalStateException("Rol USER no encontrado"));
+                        Role adminRole = roleRepository.findByName("ADMIN")
+                                        .orElseThrow(() -> new IllegalStateException("Rol ADMIN no encontrado"));
 
                         User admin = new User();
+                        admin.setName("Admin User");
                         admin.setEmail("admin@artilesphoto.com");
                         admin.setPassword(passwordEncoder.encode("admin123"));
                         Set<Role> roles = new HashSet<>();
@@ -284,7 +287,6 @@ public class DataInitializer implements CommandLineRunner {
                                         new PhotographyService(null, "Bengalas de Humo", "fa-fire"),
                                         new PhotographyService(null, "Sombrillas Creativas", "fa-umbrella"));
 
-                        // Verificar unicidad antes de guardar
                         for (PhotographyService service : services) {
                                 if (photographyServiceRepository.findByTitle(service.getTitle()).isEmpty()) {
                                         photographyServiceRepository.save(service);
