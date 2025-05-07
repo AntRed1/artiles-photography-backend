@@ -57,13 +57,14 @@ public class SecurityConfig {
 									.write("{\"error\": \"Acceso denegado. No tienes permisos suficientes.\"}");
 						}))
 				.authorizeHttpRequests(auth -> auth
+						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Permitir todas las solicitudes
+																				// OPTIONS
 						.requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/contact-info").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/services").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/testimonials").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/testimonials").permitAll() // Permitir POST sin
-																							// autenticación
+						.requestMatchers(HttpMethod.POST, "/api/testimonials").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information/{id}").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information/by-title/{title}").permitAll()
@@ -87,7 +88,7 @@ public class SecurityConfig {
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://artiles-photography-frontend.com"));
+		configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://artilesphotography.com"));
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("*"));
 		configuration.setAllowCredentials(true);
