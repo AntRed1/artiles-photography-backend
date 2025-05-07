@@ -1,90 +1,93 @@
 package com.artiles_photography_backend.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.artiles_photography_backend.models.ContactMessage;
-import com.artiles_photography_backend.repository.ContactMessageRepository;
+import com.artiles_photography_backend.dtos.ContactMessageRequest;
+import com.artiles_photography_backend.dtos.ContactMessageResponse;
+import com.artiles_photography_backend.services.ContactMessageService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 /**
  *
  * @author arojas
  */
+/**
+ * @author arojas
+ *         Controlador REST para manejar peticiones relacionadas con
+ *         ContactMessage.
+ */
 @RestController
 @RequestMapping("/api/contact")
 public class ContactController {
 
-	@Autowired
-	private ContactMessageRepository repository;
+	private final ContactMessageService contactMessageService;
+
+	public ContactController(ContactMessageService contactMessageService) {
+		this.contactMessageService = contactMessageService;
+	}
 
 	@PostMapping
 	public ResponseEntity<String> submitContactForm(
-			@RequestBody ContactFormDTO form,
-			HttpServletRequest request) {
-		ContactMessage message = new ContactMessage();
-		message.setName(form.getName());
-		message.setEmail(form.getEmail());
-		message.setPhone(form.getPhone());
-		message.setService(form.getService());
-		message.setMessage(form.getMessage());
-		message.setClientIp(request.getRemoteAddr());
-		message.setUserAgent(request.getHeader("User-Agent"));
-
-		repository.save(message);
-		return ResponseEntity.ok("Mensaje recibido con éxito");
+			@Valid @RequestBody ContactMessageRequest request,
+			HttpServletRequest httpRequest) {
+		String clientIp = httpRequest.getHeader("X-Forwarded-For");
+		if (clientIp == null || clientIp.isEmpty()) {
+			clientIp = httpRequest.getRemoteAddr();
+		}
+		String userAgent = httpRequest.getHeader("User-Agent");
+		contactMessageService.createContactMessage(request, clientIp, userAgent);
+		return ResponseEntity.status(201).body("Mensaje recibido con éxito");
 	}
 
-	public static class ContactFormDTO {
-		private String name;
-		private String email;
-		private String phone;
-		private String service;
-		private String message;
+	@GetMapping("/admin/contact-messages")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<List<ContactMessageResponse>> getAllContactMessages() {
+		return ResponseEntity.ok(contactMessageService.getAllContactMessages());
+	}
 
-		public String getName() {
-			return name;
-		}
+	@GetMapping("/admin/contact-messages/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<ContactMessageResponse> getContactMessageById(@PathVariable Long id) {
+		return ResponseEntity.ok(contactMessageService.getContactMessageById(id));
+	}
 
-		public void setName(String name) {
-			this.name = name;
-		}
+	@GetMapping("/admin/contact-messages/email/{email}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<List<ContactMessageResponse>> getContactMessagesByEmail(@PathVariable String email) {
+		return ResponseEntity.ok(contactMessageService.getContactMessagesByEmail(email));
+	}
 
-		public String getEmail() {
-			return email;
-		}
+	@GetMapping("/admin/contact-messages/service/{service}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<List<ContactMessageResponse>> getContactMessagesByService(@PathVariable String service) {
+		return ResponseEntity.ok(contactMessageService.getContactMessagesByService(service));
+	}
 
-		public void setEmail(String email) {
-			this.email = email;
-		}
+	@PutMapping("/admin/contact-messages/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<ContactMessageResponse> updateContactMessage(
+			@PathVariable Long id,
+			@Valid @RequestBody ContactMessageRequest request) {
+		return ResponseEntity.ok(contactMessageService.updateContactMessage(id, request));
+	}
 
-		public String getPhone() {
-			return phone;
-		}
-
-		public void setPhone(String phone) {
-			this.phone = phone;
-		}
-
-		public String getService() {
-			return service;
-		}
-
-		public void setService(String service) {
-			this.service = service;
-		}
-
-		public String getMessage() {
-			return message;
-		}
-
-		public void setMessage(String message) {
-			this.message = message;
-		}
+	@DeleteMapping("/admin/contact-messages/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<Void> deleteContactMessage(@PathVariable Long id) {
+		contactMessageService.deleteContactMessage(id);
+		return ResponseEntity.noContent().build();
 	}
 }

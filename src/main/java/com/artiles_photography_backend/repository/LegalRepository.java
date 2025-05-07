@@ -1,6 +1,8 @@
 package com.artiles_photography_backend.repository;
 
-import org.springframework.data.repository.CrudRepository;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.artiles_photography_backend.models.Legal;
@@ -12,5 +14,6 @@ import com.artiles_photography_backend.models.Legal;
  * 
  */
 @Repository
-public interface LegalRepository extends CrudRepository<Legal, Long> {
+public interface LegalRepository extends JpaRepository<Legal, Long> {
+	Optional<Legal> findByType(String type);
 }

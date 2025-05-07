@@ -9,6 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,29 +30,39 @@ public class ContactMessage {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@NotBlank
+	@Size(max = 100)
 	@Column(nullable = false)
 	private String name;
 
-	@Column(nullable = false)
+	@NotBlank
 	@Email
+	@Size(max = 255)
+	@Column(nullable = false)
 	private String email;
 
+	@Size(max = 20)
+	@Column
 	private String phone;
 
-	@Column(nullable = false)
+	@Size(max = 100)
+	@Column
 	private String service;
 
-	@Column(nullable = false, columnDefinition = "TEXT")
+	@NotBlank
+	@Size(max = 2000)
+	@Column(columnDefinition = "TEXT", nullable = false)
 	private String message;
 
-	@Column(nullable = false)
+	@Size(max = 45)
+	@Column
 	private String clientIp;
 
-	@Column(nullable = false)
+	@Size(max = 255)
+	@Column
 	private String userAgent;
 
-	@Column(nullable = false, updatable = false)
+	@Column(nullable = false)
 	@org.hibernate.annotations.CreationTimestamp
-	private LocalDateTime createdAt;
-
+	private LocalDateTime createdAt = LocalDateTime.now();
 }
