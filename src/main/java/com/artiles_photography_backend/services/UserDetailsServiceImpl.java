@@ -1,5 +1,7 @@
 package com.artiles_photography_backend.services;
 
+import java.util.Collections;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -48,9 +50,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		return org.springframework.security.core.userdetails.User
 				.withUsername(user.getEmail())
 				.password(user.getPassword())
-				.authorities(user.getRoles().stream()
-						.map(role -> "ROLE_" + role.getName())
-						.toArray(String[]::new))
+				.authorities(
+						(user.getRoles() != null ? user.getRoles() : Collections.emptySet())
+								.stream()
+								.filter(role -> role != null && ((Logger) role).getName() != null)
+								.map(role -> "ROLE_" + ((Logger) role).getName())
+								.toArray(String[]::new))
 				.build();
 	}
 }

@@ -30,4 +30,6 @@ public class CreateUserRequest {
 
 	@NotBlank(message = "El estado es obligatorio")
 	private String status;
+
+	private boolean enabled = true;
 }

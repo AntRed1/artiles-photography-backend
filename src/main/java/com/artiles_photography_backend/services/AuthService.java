@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -64,6 +65,7 @@ public class AuthService {
 		user.setName(request.getName());
 		user.setEmail(request.getEmail());
 		user.setPassword(passwordEncoder.encode(request.getPassword()));
+		user.setEnabled(true);
 
 		Role userRole = roleRepository.findByName("USER")
 				.orElseThrow(() -> new EntityNotFoundException("Rol USER no encontrado"));
@@ -83,15 +85,21 @@ public class AuthService {
 	}
 
 	public AuthResponse login(LoginRequest request) {
+		User user = userRepository.findByEmail(request.getEmail())
+				.orElseThrow(() -> new AuthenticationFailedException("Credenciales inválidas"));
+
+		if (!user.isEnabled()) {
+			throw new AuthenticationFailedException("La cuenta está desactivada");
+		}
+
 		try {
 			authenticationManager.authenticate(
 					new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+		} catch (DisabledException e) {
+			throw new AuthenticationFailedException("La cuenta está desactivada");
 		} catch (AuthenticationException e) {
 			throw new AuthenticationFailedException("Credenciales inválidas");
 		}
-
-		User user = userRepository.findByEmail(request.getEmail())
-				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
 		String token = jwtService.generateToken(user);
 		AuthResponse response = new AuthResponse();
@@ -109,7 +117,8 @@ public class AuthService {
 						user.getId(),
 						user.getName(),
 						user.getEmail(),
-						user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())))
+						user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()),
+						user.isEnabled()))
 				.collect(Collectors.toList());
 	}
 
@@ -123,6 +132,7 @@ public class AuthService {
 		user.setName(request.getName());
 		user.setEmail(request.getEmail());
 		user.setPassword(passwordEncoder.encode(request.getPassword()));
+		user.setEnabled(request.isEnabled());
 
 		String roleName = mapRoleToBackend(request.getRole());
 		Role role = roleRepository.findByName(roleName)
@@ -137,7 +147,8 @@ public class AuthService {
 				user.getId(),
 				user.getName(),
 				user.getEmail(),
-				roles.stream().map(Role::getName).collect(Collectors.toSet()));
+				roles.stream().map(Role::getName).collect(Collectors.toSet()),
+				user.isEnabled());
 	}
 
 	@Transactional
@@ -166,6 +177,9 @@ public class AuthService {
 			roles.add(role);
 			user.setRoles(roles);
 		}
+		if (request.getEnabled() != null) {
+			user.setEnabled(request.getEnabled());
+		}
 
 		userRepository.save(user);
 
@@ -173,7 +187,8 @@ public class AuthService {
 				user.getId(),
 				user.getName(),
 				user.getEmail(),
-				user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
+				user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()),
+				user.isEnabled());
 	}
 
 	@Transactional
@@ -202,19 +217,16 @@ public class AuthService {
 				user.getId(),
 				user.getName(),
 				user.getEmail(),
-				newRoles.stream().map(Role::getName).collect(Collectors.toSet()));
+				newRoles.stream().map(Role::getName).collect(Collectors.toSet()),
+				user.isEnabled());
 	}
 
 	private String mapRoleToBackend(String frontendRole) {
-		switch (frontendRole) {
-			case "Administrador":
-				return "ADMIN";
-			case "Editor":
-				return "EDITOR";
-			case "Visualizador":
-				return "VISUALIZADOR";
-			default:
-				throw new IllegalArgumentException("Rol no válido: " + frontendRole);
-		}
+		return switch (frontendRole) {
+			case "Administrador" -> "ADMIN";
+			case "Editor" -> "EDITOR";
+			case "Visualizador" -> "VISUALIZADOR";
+			default -> throw new IllegalArgumentException("Rol no válido: " + frontendRole);
+		};
 	}
 }

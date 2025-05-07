@@ -21,31 +21,39 @@ import jakarta.validation.ConstraintViolationException;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+	@ExceptionHandler(AuthenticationFailedException.class)
+	public ResponseEntity<Map<String, String>> handleAuthenticationFailedException(AuthenticationFailedException ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", ex.getMessage());
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+	}
+
 	@ExceptionHandler(EntityNotFoundException.class)
-	public ResponseEntity<String> handleEntityNotFoundException(EntityNotFoundException ex) {
-		return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+	public ResponseEntity<Map<String, String>> handleEntityNotFoundException(EntityNotFoundException ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", ex.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
 	}
 
 	@ExceptionHandler(UsernameNotFoundException.class)
-	public ResponseEntity<String> handleUsernameNotFoundException(UsernameNotFoundException ex) {
-		return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+	public ResponseEntity<Map<String, String>> handleUsernameNotFoundException(UsernameNotFoundException ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", ex.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<String> handleValidationExceptions(MethodArgumentNotValidException ex) {
-		String errorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
-		return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
+	public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", ex.getBindingResult().getAllErrors().get(0).getDefaultMessage());
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 	}
 
 	@ExceptionHandler(ConstraintViolationException.class)
-	public ResponseEntity<String> handleConstraintViolationException(ConstraintViolationException ex) {
-		String errorMessage = ex.getConstraintViolations().iterator().next().getMessage();
-		return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
-	}
-
-	@ExceptionHandler(RuntimeException.class)
-	public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
-		return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+	public ResponseEntity<Map<String, String>> handleConstraintViolationException(ConstraintViolationException ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", ex.getConstraintViolations().iterator().next().getMessage());
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 	}
 
 	@ExceptionHandler(JwtGenerationException.class)
@@ -81,5 +89,12 @@ public class GlobalExceptionHandler {
 		Map<String, String> error = new HashMap<>();
 		error.put("error", "El archivo excede el tamaño máximo permitido");
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+	}
+
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", "Error interno del servidor: " + ex.getMessage());
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
 	}
 }

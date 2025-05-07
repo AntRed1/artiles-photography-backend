@@ -23,4 +23,6 @@ public class UpdateUserRequest {
 	private String role;
 
 	private String status;
+
+	private Boolean enabled;
 }

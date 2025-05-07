@@ -130,6 +130,7 @@ public class DataInitializer implements CommandLineRunner {
                         admin.setName("Admin User");
                         admin.setEmail("admin@artilesphoto.com");
                         admin.setPassword(passwordEncoder.encode("admin123"));
+                        admin.setEnabled(true);
                         Set<Role> roles = new HashSet<>();
                         roles.add(userRole);
                         roles.add(adminRole);

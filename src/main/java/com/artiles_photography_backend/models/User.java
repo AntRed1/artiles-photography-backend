@@ -1,6 +1,5 @@
 package com.artiles_photography_backend.models;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -9,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -38,6 +38,9 @@ public class User implements UserDetails {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@Column(nullable = false)
+	private String name;
+
 	@Column(nullable = false, unique = true)
 	private String email;
 
@@ -45,17 +48,18 @@ public class User implements UserDetails {
 	private String password;
 
 	@Column(nullable = false)
-	private String name;
+	private boolean enabled = true;
 
-	@ManyToMany(fetch = FetchType.EAGER)
+	@ManyToMany(fetch = FetchType.EAGER, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	@JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
 	private Set<Role> roles = new HashSet<>();
 
 	@Override
-	public Collection<? extends GrantedAuthority> getAuthorities() {
+	public Set<GrantedAuthority> getAuthorities() {
 		return roles.stream()
+				.filter(role -> role != null && role.getName() != null)
 				.map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
-				.collect(Collectors.toList());
+				.collect(Collectors.toSet());
 	}
 
 	@Override
@@ -80,6 +84,6 @@ public class User implements UserDetails {
 
 	@Override
 	public boolean isEnabled() {
-		return true;
+		return enabled;
 	}
 }
