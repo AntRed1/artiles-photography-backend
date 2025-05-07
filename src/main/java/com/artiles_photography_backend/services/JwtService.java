@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.artiles_photography_backend.exceptions.JwtGenerationException;
 import com.artiles_photography_backend.exceptions.JwtValidationException;
+import com.artiles_photography_backend.models.User;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
@@ -48,11 +49,13 @@ public class JwtService {
 	public String generateToken(UserDetails userDetails) {
 		try {
 			logger.debug("Generando token para usuario: {}", userDetails.getUsername());
+			String name = (userDetails instanceof User) ? ((User) userDetails).getName() : "";
 			return JWT.create()
 					.withSubject(userDetails.getUsername())
 					.withIssuer(issuer)
 					.withIssuedAt(new Date())
 					.withExpiresAt(new Date(System.currentTimeMillis() + expiration))
+					.withClaim("name", name)
 					.withClaim("roles", userDetails.getAuthorities().stream()
 							.map(GrantedAuthority::getAuthority)
 							.collect(Collectors.toList()))

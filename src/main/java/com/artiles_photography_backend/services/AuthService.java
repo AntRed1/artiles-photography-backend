@@ -1,6 +1,7 @@
 package com.artiles_photography_backend.services;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -12,8 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.artiles_photography_backend.dtos.AuthResponse;
+import com.artiles_photography_backend.dtos.CreateUserRequest;
 import com.artiles_photography_backend.dtos.LoginRequest;
 import com.artiles_photography_backend.dtos.RegisterRequest;
+import com.artiles_photography_backend.dtos.UpdateUserRequest;
 import com.artiles_photography_backend.dtos.UpdateUserRolesRequest;
 import com.artiles_photography_backend.dtos.UserResponse;
 import com.artiles_photography_backend.exceptions.AuthenticationFailedException;
@@ -58,11 +61,11 @@ public class AuthService {
 		}
 
 		User user = new User();
+		user.setName(request.getName());
 		user.setEmail(request.getEmail());
 		user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-		// Asignar rol USER por defecto
-		Role userRole = roleRepository.findByName("ROLE_USER")
+		Role userRole = roleRepository.findByName("USER")
 				.orElseThrow(() -> new EntityNotFoundException("Rol USER no encontrado"));
 		Set<Role> roles = new HashSet<>();
 		roles.add(userRole);
@@ -73,6 +76,7 @@ public class AuthService {
 		String token = jwtService.generateToken(user);
 		AuthResponse response = new AuthResponse();
 		response.setToken(token);
+		response.setName(user.getName());
 		response.setEmail(user.getEmail());
 		response.setRoles(roles.stream().map(Role::getName).collect(Collectors.toSet()));
 		return response;
@@ -92,9 +96,91 @@ public class AuthService {
 		String token = jwtService.generateToken(user);
 		AuthResponse response = new AuthResponse();
 		response.setToken(token);
+		response.setName(user.getName());
 		response.setEmail(user.getEmail());
 		response.setRoles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
 		return response;
+	}
+
+	@Transactional
+	public List<UserResponse> getAllUsers() {
+		return userRepository.findAll().stream()
+				.map(user -> new UserResponse(
+						user.getId(),
+						user.getName(),
+						user.getEmail(),
+						user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())))
+				.collect(Collectors.toList());
+	}
+
+	@Transactional
+	public UserResponse createUser(CreateUserRequest request) {
+		if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+			throw new EmailAlreadyExistsException("El email ya está registrado");
+		}
+
+		User user = new User();
+		user.setName(request.getName());
+		user.setEmail(request.getEmail());
+		user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+		String roleName = mapRoleToBackend(request.getRole());
+		Role role = roleRepository.findByName(roleName)
+				.orElseThrow(() -> new EntityNotFoundException("Rol no encontrado: " + roleName));
+		Set<Role> roles = new HashSet<>();
+		roles.add(role);
+		user.setRoles(roles);
+
+		userRepository.save(user);
+
+		return new UserResponse(
+				user.getId(),
+				user.getName(),
+				user.getEmail(),
+				roles.stream().map(Role::getName).collect(Collectors.toSet()));
+	}
+
+	@Transactional
+	public UserResponse updateUser(Long id, UpdateUserRequest request) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
+
+		if (request.getName() != null && !request.getName().isBlank()) {
+			user.setName(request.getName());
+		}
+		if (request.getEmail() != null && !request.getEmail().isBlank()) {
+			if (!request.getEmail().equals(user.getEmail())
+					&& userRepository.findByEmail(request.getEmail()).isPresent()) {
+				throw new EmailAlreadyExistsException("El email ya está registrado");
+			}
+			user.setEmail(request.getEmail());
+		}
+		if (request.getPassword() != null && !request.getPassword().isBlank()) {
+			user.setPassword(passwordEncoder.encode(request.getPassword()));
+		}
+		if (request.getRole() != null && !request.getRole().isBlank()) {
+			String roleName = mapRoleToBackend(request.getRole());
+			Role role = roleRepository.findByName(roleName)
+					.orElseThrow(() -> new EntityNotFoundException("Rol no encontrado: " + roleName));
+			Set<Role> roles = new HashSet<>();
+			roles.add(role);
+			user.setRoles(roles);
+		}
+
+		userRepository.save(user);
+
+		return new UserResponse(
+				user.getId(),
+				user.getName(),
+				user.getEmail(),
+				user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
+	}
+
+	@Transactional
+	public void deleteUser(Long id) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
+		userRepository.delete(user);
 	}
 
 	@Transactional
@@ -112,10 +198,23 @@ public class AuthService {
 		user.setRoles(newRoles);
 		userRepository.save(user);
 
-		UserResponse response = new UserResponse();
-		response.setId(user.getId());
-		response.setEmail(user.getEmail());
-		response.setRoles(newRoles.stream().map(Role::getName).collect(Collectors.toSet()));
-		return response;
+		return new UserResponse(
+				user.getId(),
+				user.getName(),
+				user.getEmail(),
+				newRoles.stream().map(Role::getName).collect(Collectors.toSet()));
+	}
+
+	private String mapRoleToBackend(String frontendRole) {
+		switch (frontendRole) {
+			case "Administrador":
+				return "ADMIN";
+			case "Editor":
+				return "EDITOR";
+			case "Visualizador":
+				return "VISUALIZADOR";
+			default:
+				throw new IllegalArgumentException("Rol no válido: " + frontendRole);
+		}
 	}
 }
