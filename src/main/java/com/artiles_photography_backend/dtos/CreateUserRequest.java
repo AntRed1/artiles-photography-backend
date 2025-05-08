@@ -28,8 +28,5 @@ public class CreateUserRequest {
 	@NotBlank(message = "El rol es obligatorio")
 	private String role;
 
-	@NotBlank(message = "El estado es obligatorio")
-	private String status;
-
 	private boolean enabled = true;
 }

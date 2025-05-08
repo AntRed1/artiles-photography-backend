@@ -1,6 +1,8 @@
 package com.artiles_photography_backend.controllers;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -69,9 +71,11 @@ public class AuthController {
 
     @DeleteMapping("/admin/users/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long id) {
         authService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Usuario eliminado");
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/auth/users/{userId}/roles")

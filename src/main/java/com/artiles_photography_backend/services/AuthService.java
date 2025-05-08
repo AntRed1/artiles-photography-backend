@@ -221,12 +221,13 @@ public class AuthService {
 				user.isEnabled());
 	}
 
-	private String mapRoleToBackend(String frontendRole) {
-		return switch (frontendRole) {
-			case "Administrador" -> "ADMIN";
-			case "Editor" -> "EDITOR";
-			case "Visualizador" -> "VISUALIZADOR";
-			default -> throw new IllegalArgumentException("Rol no válido: " + frontendRole);
+	private String mapRoleToBackend(String role) {
+		return switch (role) {
+			case "Administrador", "ADMIN" -> "ADMIN";
+			case "Editor", "EDITOR" -> "EDITOR";
+			case "Visualizador", "VISUALIZADOR" -> "VISUALIZADOR";
+			case "Usuario", "USER" -> "USER";
+			default -> throw new IllegalArgumentException("Rol no válido: " + role);
 		};
 	}
 }
