@@ -66,6 +66,8 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/services").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/testimonials").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/testimonials/all").permitAll() // Added to allow public
+																								// access
 						.requestMatchers(HttpMethod.POST, "/api/testimonials").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information/{id}").permitAll()
