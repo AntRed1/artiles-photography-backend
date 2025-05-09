@@ -44,8 +44,8 @@ public class CarouselImageService {
     }
 
     public List<CarouselImageResponse> getAllCarouselImages() {
-        logger.debug("Obteniendo todas las imágenes del carrusel ordenadas por displayOrder");
-        return carouselImageRepository.findAllByOrderByDisplayOrderAsc().stream()
+        logger.debug("Obteniendo todas las imágenes del carrusel ordenadas por ID");
+        return carouselImageRepository.findAllByOrderByIdAsc().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -60,6 +60,7 @@ public class CarouselImageService {
     @Transactional
     public CarouselImageResponse createCarouselImage(CarouselImageUploadRequest request) {
         logger.info("Subiendo nueva imagen del carrusel con título: {}", request.getTitle());
+
         validateFile(request.getFile());
 
         try {
@@ -72,7 +73,6 @@ public class CarouselImageService {
             image.setUrl(url);
             image.setTitle(request.getTitle());
             image.setDescription(request.getDescription());
-            image.setDisplayOrder(request.getDisplayOrder());
             image = carouselImageRepository.save(image);
 
             logger.info("Imagen subida exitosamente a Cloudinary con public_id: {}", publicId);
@@ -127,12 +127,10 @@ public class CarouselImageService {
     }
 
     private String extractPublicId(String url) {
-        // Ejemplo:
-        // https://res.cloudinary.com/<cloud_name>/image/upload/v1234567890/photoquince/carrusel/<image_id>.jpg
         String[] parts = url.split("/");
-        String fileName = parts[parts.length - 1]; // <image_id>.jpg
-        String imageId = fileName.substring(0, fileName.lastIndexOf(".")); // <image_id>
-        String publicId = String.join("/", parts[parts.length - 3], parts[parts.length - 2], imageId); // photoquince/carrusel/<image_id>
+        String fileName = parts[parts.length - 1];
+        String imageId = fileName.substring(0, fileName.lastIndexOf("."));
+        String publicId = String.join("/", parts[parts.length - 3], parts[parts.length - 2], imageId);
         return publicId;
     }
 
@@ -140,7 +138,6 @@ public class CarouselImageService {
         image.setUrl(request.getUrl());
         image.setTitle(request.getTitle());
         image.setDescription(request.getDescription());
-        image.setDisplayOrder(request.getDisplayOrder());
     }
 
     private CarouselImageResponse mapToResponse(CarouselImage image) {
@@ -149,7 +146,6 @@ public class CarouselImageService {
         response.setUrl(image.getUrl());
         response.setTitle(image.getTitle());
         response.setDescription(image.getDescription());
-        response.setDisplayOrder(image.getDisplayOrder());
         return response;
     }
 }

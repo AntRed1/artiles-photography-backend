@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<!-- Variables para configuraciones reutilizables -->
+	<property name="LOG_PATH" value="/logs/application.log" />
+	<property name="LOG_FILE_NAME" value="application.log" />
+	<property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n" />
+	<property name="MAX_HISTORY" value="30" />
+	<property name="MAX_FILE_SIZE" value="10MB" />
+	<property name="TOTAL_SIZE_CAP" value="1GB" />
+
+	<!-- Appender para consola -->
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>${LOG_PATTERN}</pattern>
+			<charset>UTF-8</charset>
+		</encoder>
+	</appender>
+
+	<!-- Appender para archivo principal -->
+	<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_PATH}/${LOG_FILE_NAME}</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+			<maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+			<maxHistory>${MAX_HISTORY}</maxHistory>
+			<totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+		</rollingPolicy>
+		<encoder>
+			<pattern>${LOG_PATTERN}</pattern>
+			<charset>UTF-8</charset>
+		</encoder>
+	</appender>
+
+	<!-- Logger para el filtro HTTP -->
+	<logger name="com.artiles_photography_backend.config.LoggingFilter" level="INFO" additivity="false">
+		<appender-ref ref="FILE" />
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+	<!-- Otros loggers -->
+	<logger name="com.artiles_photography_backend" level="INFO" additivity="false">
+		<appender-ref ref="FILE" />
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+	<logger name="org.springframework.web" level="INFO" additivity="false">
+		<appender-ref ref="FILE" />
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+	<logger name="org.springframework.security" level="INFO" additivity="false">
+		<appender-ref ref="FILE" />
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+	<logger name="org.springframework.boot" level="INFO" additivity="false">
+		<appender-ref ref="FILE" />
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+	<logger name="org.hibernate.SQL" level="INFO" additivity="false">
+		<appender-ref ref="FILE" />
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+	<logger name="com.zaxxer.hikari" level="INFO" additivity="false">
+		<appender-ref ref="FILE" />
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+	<logger name="com.cloudinary" level="INFO" additivity="false">
+		<appender-ref ref="FILE" />
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+	<!-- Nivel raíz -->
+	<root level="INFO">
+		<appender-ref ref="FILE" />
+		<appender-ref ref="CONSOLE" />
+	</root>
+
+</configuration>

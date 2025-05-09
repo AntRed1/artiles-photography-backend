@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -28,6 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
 	private final JwtService jwtService;
@@ -66,18 +68,23 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/services").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/testimonials").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/testimonials/all").permitAll() // Added to allow public
-																								// access
+						.requestMatchers(HttpMethod.GET, "/api/testimonials/all").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/testimonials").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information/{id}").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information/by-title/{title}").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/gallery").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/gallery/{id}").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/gallery/admin/gallery/upload").authenticated()
+						.requestMatchers(HttpMethod.PUT, "/api/gallery/admin/gallery/{id}").authenticated()
+						.requestMatchers(HttpMethod.DELETE, "/api/gallery/admin/gallery/{id}").authenticated()
 						.requestMatchers(HttpMethod.GET, "/api/packages").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/packages/{id}").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/packages/active").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/carousel").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/carousel/upload").authenticated()
+						.requestMatchers(HttpMethod.PUT, "/api/carousel/{id}").authenticated()
+						.requestMatchers(HttpMethod.DELETE, "/api/carousel/{id}").authenticated()
 						.requestMatchers(HttpMethod.GET, "/api/config").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/config/{id}").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/config/hero").permitAll()

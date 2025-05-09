@@ -33,6 +33,5 @@ public class CarouselImage {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @Column(nullable = false)
-    private Integer displayOrder;
+    
 }

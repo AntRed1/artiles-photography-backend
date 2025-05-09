@@ -88,6 +88,7 @@ public class GalleryService {
 		logger.info("Actualizando imagen de la galería con ID: {}", id);
 		Gallery gallery = galleryRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Imagen de la galería no encontrada con ID: " + id));
+
 		updateEntityFromRequest(gallery, request);
 		gallery = galleryRepository.save(gallery);
 		return mapToResponse(gallery);
@@ -127,18 +128,20 @@ public class GalleryService {
 	}
 
 	private String extractPublicId(String url) {
-		// Ejemplo:
-		// https://res.cloudinary.com/<cloud_name>/image/upload/v1234567890/photoquince/galeria/<image_id>.jpg
 		String[] parts = url.split("/");
-		String fileName = parts[parts.length - 1]; // <image_id>.jpg
-		String imageId = fileName.substring(0, fileName.lastIndexOf(".")); // <image_id>
-		String publicId = String.join("/", parts[parts.length - 3], parts[parts.length - 2], imageId); // photoquince/galeria/<image_id>
+		String fileName = parts[parts.length - 1];
+		String imageId = fileName.substring(0, fileName.lastIndexOf("."));
+		String publicId = String.join("/", parts[parts.length - 3], parts[parts.length - 2], imageId);
 		return publicId;
 	}
 
 	private void updateEntityFromRequest(Gallery gallery, GalleryRequest request) {
-		gallery.setImageUrl(request.getImageUrl());
-		gallery.setDescription(request.getDescription());
+		if (request.getImageUrl() != null) {
+			gallery.setImageUrl(request.getImageUrl());
+		}
+		if (request.getDescription() != null) {
+			gallery.setDescription(request.getDescription());
+		}
 	}
 
 	private GalleryResponse mapToResponse(Gallery gallery) {

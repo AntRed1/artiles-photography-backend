@@ -1,7 +1,6 @@
 package com.artiles_photography_backend.dtos;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -23,7 +22,4 @@ public class CarouselImageRequest {
 	@NotBlank(message = "La descripción es obligatoria")
 	@Size(max = 500, message = "La descripción no puede exceder los 500 caracteres")
 	private String description;
-
-	@NotNull(message = "El orden de visualización es obligatorio")
-	private Integer displayOrder;
 }

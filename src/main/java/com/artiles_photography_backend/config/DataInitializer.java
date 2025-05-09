@@ -88,9 +88,9 @@ public class DataInitializer implements CommandLineRunner {
 
         @Override
         public void run(String... args) {
+                logger.info("Iniciando inicialización de datos...");
                 try {
-                        initializeRoles();
-                        initializeAdminUser();
+                        initializeRolesAndAdminUser();
                         initializeGallery();
                         initializeCarouselImages();
                         initializePhotographyPackages();
@@ -100,13 +100,16 @@ public class DataInitializer implements CommandLineRunner {
                         initializePhotographyServices();
                         initializeLegalDocuments();
                         initializeConfiguration();
+                        logger.info("Inicialización de datos completada exitosamente.");
                 } catch (Exception e) {
-                        logger.error("Error durante la inicialización de datos: {}", e.getMessage());
+                        logger.error("Error durante la inicialización de datos: {}", e.getMessage(), e);
+                        throw new RuntimeException("Fallo en la inicialización de datos", e);
                 }
         }
 
         @Transactional
-        private void initializeRoles() {
+        private void initializeRolesAndAdminUser() {
+                // Inicializar roles
                 if (roleRepository.count() == 0) {
                         logger.info("Inicializando roles...");
                         roleRepository.saveAll(Arrays.asList(
@@ -114,11 +117,12 @@ public class DataInitializer implements CommandLineRunner {
                                         new Role(null, "ADMIN"),
                                         new Role(null, "EDITOR"),
                                         new Role(null, "VISUALIZADOR")));
+                        logger.info("Roles inicializados. Total: {}", roleRepository.count());
+                } else {
+                        logger.info("Roles ya existen. Total: {}", roleRepository.count());
                 }
-        }
 
-        @Transactional
-        private void initializeAdminUser() {
+                // Inicializar usuario administrador
                 if (userRepository.findByEmail("admin@artilesphoto.com").isEmpty()) {
                         logger.info("Inicializando usuario administrador...");
                         Role userRole = roleRepository.findByName("USER")
@@ -137,6 +141,9 @@ public class DataInitializer implements CommandLineRunner {
                         admin.setRoles(roles);
 
                         userRepository.save(admin);
+                        logger.info("Usuario administrador inicializado. Total usuarios: {}", userRepository.count());
+                } else {
+                        logger.info("Usuario administrador ya existe. Total usuarios: {}", userRepository.count());
                 }
         }
 
@@ -152,6 +159,9 @@ public class DataInitializer implements CommandLineRunner {
                                                         now.minusDays(3)),
                                         new Gallery(null, "/images/gallery3.jpg", "Sesión familiar en playa",
                                                         now.minusDays(1))));
+                        logger.info("Galería inicializada. Total imágenes: {}", galleryRepository.count());
+                } else {
+                        logger.info("Galería ya existe. Total imágenes: {}", galleryRepository.count());
                 }
         }
 
@@ -161,11 +171,14 @@ public class DataInitializer implements CommandLineRunner {
                         logger.info("Inicializando imágenes del carrusel...");
                         carouselImageRepository.saveAll(Arrays.asList(
                                         new CarouselImage(null, "/images/carousel1.jpg", "Momentos Inolvidables",
-                                                        "carousel: Momentos Inolvidables", 1),
+                                                        "Momentos Inolvidables"),
                                         new CarouselImage(null, "/images/carousel2.jpg", "Capturando Emociones",
-                                                        "carousel: Capturando Emociones", 2),
+                                                        "Capturando Emociones"),
                                         new CarouselImage(null, "/images/carousel3.jpg", "Tu Historia en Imágenes",
-                                                        "carousel: Tu Historia en Imágenes", 3)));
+                                                        "Tu Historia en Imágenes")));
+                        logger.info("Carrusel inicializado. Total imágenes: {}", carouselImageRepository.count());
+                } else {
+                        logger.info("Carrusel ya existe. Total imágenes: {}", carouselImageRepository.count());
                 }
         }
 
@@ -205,6 +218,11 @@ public class DataInitializer implements CommandLineRunner {
                                                                         "Sesión de 6 horas", "150 fotos editadas",
                                                                         "Fotografía grupal", "Entrega digital",
                                                                         "Galería en línea"))));
+                        logger.info("Paquetes fotográficos inicializados. Total: {}",
+                                        photographyPackageRepository.count());
+                } else {
+                        logger.info("Paquetes fotográficos ya existen. Total: {}",
+                                        photographyPackageRepository.count());
                 }
         }
 
@@ -226,6 +244,9 @@ public class DataInitializer implements CommandLineRunner {
                                                         "Excelente servicio para las fotos de graduación de mi hijo.",
                                                         now.minusDays(10), "Tablet Safari", "192.168.1.3",
                                                         "Santo Domingo, Dominican Republic", false)));
+                        logger.info("Testimonios inicializados. Total: {}", testimonialRepository.count());
+                } else {
+                        logger.info("Testimonios ya existen. Total: {}", testimonialRepository.count());
                 }
         }
 
@@ -244,6 +265,9 @@ public class DataInitializer implements CommandLineRunner {
                                         "https://twitter.com/artilesphoto",
                                         "https://www.tiktok.com/@artilesfotograf",
                                         "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1892.3236295809074!2d-69.96382959187031!3d18.45431823194794!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8eaf8b69b1b0ca95%3A0xf15d46b937405300!2sCasita%20de%20princesa%2C%20Quincea%C3%B1era!5e0!3m2!1ses!2sdo!4v1746545688095!5m2!1ses!2sdo"));
+                        logger.info("Información de contacto inicializada. Total: {}", contactInfoRepository.count());
+                } else {
+                        logger.info("Información de contacto ya existe. Total: {}", contactInfoRepository.count());
                 }
         }
 
@@ -266,6 +290,9 @@ public class DataInitializer implements CommandLineRunner {
                                                         "Nuestra misión es ofrecer un servicio fotográfico único que capture los momentos más preciados de nuestros clientes con un enfoque en la calidad y la satisfacción.",
                                                         Arrays.asList("Bodas", "Eventos", "Bautizos"),
                                                         Arrays.asList("fa-clipboard", "fa-handshake", "fa-bell"))));
+                        logger.info("Sobre Nosotros inicializado. Total: {}", aboutUsRepository.count());
+                } else {
+                        logger.info("Sobre Nosotros ya existe. Total: {}", aboutUsRepository.count());
                 }
         }
 
@@ -293,6 +320,11 @@ public class DataInitializer implements CommandLineRunner {
                                         photographyServiceRepository.save(service);
                                 }
                         }
+                        logger.info("Servicios fotográficos inicializados. Total: {}",
+                                        photographyServiceRepository.count());
+                } else {
+                        logger.info("Servicios fotográficos ya existen. Total: {}",
+                                        photographyServiceRepository.count());
                 }
         }
 
@@ -305,6 +337,9 @@ public class DataInitializer implements CommandLineRunner {
                                                         "En Artiles Photography Studio, respetamos tu privacidad. Recopilamos información personal como nombre, correo electrónico, y datos de contacto solo con tu consentimiento. También podemos recopilar información técnica como el dispositivo, dirección IP, y ubicación geográfica para mejorar nuestros servicios y analizar el uso de nuestro sitio web. No compartimos tus datos con terceros sin tu permiso, salvo lo requerido por ley. Consulta nuestra política completa en nuestro sitio web."),
                                         new Legal(null, "TERMS",
                                                         "Al usar nuestros servicios, aceptas nuestros términos y condiciones. Nos reservamos el derecho de modificar estos términos en cualquier momento.")));
+                        logger.info("Documentos legales inicializados. Total: {}", legalRepository.count());
+                } else {
+                        logger.info("Documentos legales ya existen. Total: {}", legalRepository.count());
                 }
         }
 
@@ -316,6 +351,9 @@ public class DataInitializer implements CommandLineRunner {
                                         null,
                                         "/images/logo.png",
                                         "/images/hero-background.jpg"));
+                        logger.info("Configuración inicializada. Total: {}", configurationRepository.count());
+                } else {
+                        logger.info("Configuración ya existe. Total: {}", configurationRepository.count());
                 }
         }
 }

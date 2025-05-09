@@ -14,10 +14,10 @@ import lombok.Data;
 @Data
 public class GalleryUploadRequest {
 
-	@NotNull(message = "El archivo de imagen es obligatorio")
-	private MultipartFile file;
+    @NotNull(message = "El archivo de imagen es obligatorio")
+    private MultipartFile file;
 
-	@NotBlank(message = "La descripción es obligatoria")
-	@Size(max = 500, message = "La descripción no puede exceder los 500 caracteres")
-	private String description;
+    @NotBlank(message = "La descripción es obligatoria")
+    @Size(max = 500, message = "La descripción no puede exceder los 500 caracteres")
+    private String description;
 }

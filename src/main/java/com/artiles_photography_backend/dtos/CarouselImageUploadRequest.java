@@ -24,7 +24,4 @@ public class CarouselImageUploadRequest {
 	@NotBlank(message = "La descripción es obligatoria")
 	@Size(max = 500, message = "La descripción no puede exceder los 500 caracteres")
 	private String description;
-
-	@NotNull(message = "El orden de visualización es obligatorio")
-	private Integer displayOrder;
 }

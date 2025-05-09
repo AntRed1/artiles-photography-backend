@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import lombok.Data;
 
 /**
- *
  * @author arojas
  */
 @Data
