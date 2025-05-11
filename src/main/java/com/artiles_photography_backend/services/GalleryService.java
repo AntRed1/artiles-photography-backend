@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.artiles_photography_backend.dtos.GalleryRequest;
 import com.artiles_photography_backend.dtos.GalleryResponse;
+import com.artiles_photography_backend.dtos.GalleryImageUpdateRequest;
 import com.artiles_photography_backend.dtos.GalleryUploadRequest;
 import com.artiles_photography_backend.exceptions.CloudinaryUploadException;
 import com.artiles_photography_backend.models.Gallery;
@@ -62,19 +62,16 @@ public class GalleryService {
 	public GalleryResponse createGalleryImage(GalleryUploadRequest request) {
 		logger.info("Subiendo nueva imagen de la galería con descripción: {}", request.getDescription());
 		validateFile(request.getFile());
-
 		try {
 			Map uploadResult = cloudinary.uploader().upload(request.getFile().getBytes(),
 					ObjectUtils.asMap("folder", CLOUDINARY_FOLDER));
 			String url = (String) uploadResult.get("secure_url");
 			String publicId = (String) uploadResult.get("public_id");
-
 			Gallery gallery = new Gallery();
 			gallery.setImageUrl(url);
 			gallery.setDescription(request.getDescription());
 			gallery.setUploadedAt(LocalDateTime.now());
 			gallery = galleryRepository.save(gallery);
-
 			logger.info("Imagen subida exitosamente a Cloudinary con public_id: {}", publicId);
 			return mapToResponse(gallery);
 		} catch (IOException e) {
@@ -84,13 +81,43 @@ public class GalleryService {
 	}
 
 	@Transactional
-	public GalleryResponse updateGalleryImage(Long id, GalleryRequest request) {
+	public GalleryResponse updateGalleryImage(Long id, GalleryImageUpdateRequest request) {
 		logger.info("Actualizando imagen de la galería con ID: {}", id);
 		Gallery gallery = galleryRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Imagen de la galería no encontrada con ID: " + id));
 
+		String oldPublicId = null;
+		if (request.getFile() != null && !request.getFile().isEmpty()) {
+			validateFile(request.getFile());
+			try {
+				// Guardar el public_id de la imagen anterior para eliminarla después
+				oldPublicId = extractPublicId(gallery.getImageUrl());
+				// Subir la nueva imagen a Cloudinary
+				Map uploadResult = cloudinary.uploader().upload(request.getFile().getBytes(),
+						ObjectUtils.asMap("folder", CLOUDINARY_FOLDER));
+				gallery.setImageUrl((String) uploadResult.get("secure_url"));
+				logger.info("Nueva imagen subida a Cloudinary con public_id: {}", uploadResult.get("public_id"));
+			} catch (IOException e) {
+				logger.error("Error al subir nueva imagen a Cloudinary: {}", e.getMessage());
+				throw new CloudinaryUploadException("Error al subir la nueva imagen a Cloudinary", e);
+			}
+		}
+
+		// Actualizar metadatos
 		updateEntityFromRequest(gallery, request);
 		gallery = galleryRepository.save(gallery);
+
+		// Eliminar la imagen anterior de Cloudinary si se subió una nueva
+		if (oldPublicId != null) {
+			try {
+				cloudinary.uploader().destroy(oldPublicId, ObjectUtils.emptyMap());
+				logger.info("Imagen anterior eliminada de Cloudinary con public_id: {}", oldPublicId);
+			} catch (IOException e) {
+				logger.warn("Error al eliminar imagen anterior de Cloudinary: {}", e.getMessage());
+				// No lanzar excepción para no interrumpir la actualización
+			}
+		}
+
 		return mapToResponse(gallery);
 	}
 
@@ -99,7 +126,6 @@ public class GalleryService {
 		logger.info("Eliminando imagen de la galería con ID: {}", id);
 		Gallery gallery = galleryRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Imagen de la galería no encontrada con ID: " + id));
-
 		try {
 			String publicId = extractPublicId(gallery.getImageUrl());
 			cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
@@ -108,7 +134,6 @@ public class GalleryService {
 			logger.error("Error al eliminar imagen de Cloudinary: {}", e.getMessage());
 			throw new CloudinaryUploadException("Error al eliminar la imagen de Cloudinary", e);
 		}
-
 		galleryRepository.deleteById(id);
 	}
 
@@ -135,10 +160,7 @@ public class GalleryService {
 		return publicId;
 	}
 
-	private void updateEntityFromRequest(Gallery gallery, GalleryRequest request) {
-		if (request.getImageUrl() != null) {
-			gallery.setImageUrl(request.getImageUrl());
-		}
+	private void updateEntityFromRequest(Gallery gallery, GalleryImageUpdateRequest request) {
 		if (request.getDescription() != null) {
 			gallery.setDescription(request.getDescription());
 		}

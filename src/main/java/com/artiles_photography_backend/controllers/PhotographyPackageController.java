@@ -11,11 +11,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.artiles_photography_backend.dtos.PhotographyPackageRequest;
 import com.artiles_photography_backend.dtos.PhotographyPackageResponse;
 import com.artiles_photography_backend.dtos.PhotographyPackageUploadRequest;
 import com.artiles_photography_backend.services.PhotographyPackageService;
@@ -52,21 +50,21 @@ public class PhotographyPackageController {
 		return ResponseEntity.ok(service.getActivePhotographyPackages());
 	}
 
-	@PostMapping(value = "/admin/packages/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PostMapping(value = "/admin/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<PhotographyPackageResponse> createPhotographyPackage(
 			@Valid @ModelAttribute PhotographyPackageUploadRequest request) {
 		return ResponseEntity.status(201).body(service.createPhotographyPackage(request));
 	}
 
-	@PutMapping("/admin/packages/{id}")
+	@PutMapping(value = "/admin/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<PhotographyPackageResponse> updatePhotographyPackage(
-			@PathVariable Long id, @Valid @RequestBody PhotographyPackageRequest request) {
+			@PathVariable Long id, @Valid @ModelAttribute PhotographyPackageUploadRequest request) {
 		return ResponseEntity.ok(service.updatePhotographyPackage(id, request));
 	}
 
-	@DeleteMapping("/admin/packages/{id}")
+	@DeleteMapping("/admin/{id}")
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Void> deletePhotographyPackage(@PathVariable Long id) {
 		service.deletePhotographyPackage(id);

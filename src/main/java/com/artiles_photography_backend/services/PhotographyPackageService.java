@@ -67,7 +67,7 @@ public class PhotographyPackageService {
 	@Transactional
 	public PhotographyPackageResponse createPhotographyPackage(PhotographyPackageUploadRequest request) {
 		logger.info("Creando nuevo paquete fotográfico con título: {}", request.getTitle());
-		validateFile(request.getFile());
+		validateFile(request.getFile(), true);
 
 		try {
 			Map uploadResult = cloudinary.uploader().upload(request.getFile().getBytes(),
@@ -103,6 +103,48 @@ public class PhotographyPackageService {
 	}
 
 	@Transactional
+	public PhotographyPackageResponse updatePhotographyPackage(Long id, PhotographyPackageUploadRequest request) {
+		logger.info("Actualizando paquete fotográfico con ID: {}", id);
+		PhotographyPackage pkg = repository.findById(id)
+				.orElseThrow(() -> new EntityNotFoundException("Paquete no encontrado con ID: " + id));
+
+		// Actualizar campos básicos
+		pkg.setTitle(request.getTitle());
+		pkg.setDescription(request.getDescription());
+		pkg.setPrice(request.getPrice());
+		pkg.setIsActive(request.getIsActive());
+		pkg.setFeatures(request.getFeatures());
+
+		// Manejar la imagen si se proporciona
+		MultipartFile file = request.getFile();
+		if (file != null && !file.isEmpty()) {
+			validateFile(file, false);
+			try {
+				// Eliminar la imagen anterior en Cloudinary (si existe)
+				if (pkg.getImageUrl() != null) {
+					String publicId = extractPublicId(pkg.getImageUrl());
+					cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+					logger.info("Imagen anterior eliminada de Cloudinary con public_id: {}", publicId);
+				}
+
+				// Subir la nueva imagen
+				Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+						ObjectUtils.asMap("folder", CLOUDINARY_FOLDER));
+				String url = (String) uploadResult.get("secure_url");
+				String publicId = (String) uploadResult.get("public_id");
+				pkg.setImageUrl(url);
+				logger.info("Nueva imagen subida a Cloudinary con public_id: {}", publicId);
+			} catch (IOException e) {
+				logger.error("Error al subir imagen a Cloudinary: {}", e.getMessage());
+				throw new CloudinaryUploadException("Error al subir la imagen a Cloudinary", e);
+			}
+		}
+
+		pkg = repository.save(pkg);
+		return mapToResponse(pkg);
+	}
+
+	@Transactional
 	public void deletePhotographyPackage(Long id) {
 		logger.info("Eliminando paquete fotográfico con ID: {}", id);
 		PhotographyPackage pkg = repository.findById(id)
@@ -120,18 +162,20 @@ public class PhotographyPackageService {
 		repository.deleteById(id);
 	}
 
-	private void validateFile(MultipartFile file) {
-		if (file == null || file.isEmpty()) {
+	private void validateFile(MultipartFile file, boolean required) {
+		if (required && (file == null || file.isEmpty())) {
 			logger.warn("Archivo de imagen vacío o nulo");
 			throw new IllegalArgumentException("El archivo de imagen es obligatorio");
 		}
-		if (file.getSize() > MAX_FILE_SIZE) {
-			logger.warn("Archivo de imagen excede el tamaño máximo: {} bytes", file.getSize());
-			throw new IllegalArgumentException("El archivo excede el tamaño máximo de 5MB");
-		}
-		if (!ALLOWED_TYPES.contains(file.getContentType())) {
-			logger.warn("Tipo de archivo no permitido: {}", file.getContentType());
-			throw new IllegalArgumentException("Solo se permiten imágenes JPEG o PNG");
+		if (file != null && !file.isEmpty()) {
+			if (file.getSize() > MAX_FILE_SIZE) {
+				logger.warn("Archivo de imagen excede el tamaño máximo: {} bytes", file.getSize());
+				throw new IllegalArgumentException("El archivo excede el tamaño máximo de 5MB");
+			}
+			if (!ALLOWED_TYPES.contains(file.getContentType())) {
+				logger.warn("Tipo de archivo no permitido: {}", file.getContentType());
+				throw new IllegalArgumentException("Solo se permiten imágenes JPEG o PNG");
+			}
 		}
 	}
 

@@ -18,7 +18,6 @@ import lombok.Data;
 @Data
 public class PhotographyPackageUploadRequest {
 
-	@NotNull(message = "El archivo de imagen es obligatorio")
 	private MultipartFile file;
 
 	@NotBlank(message = "El título es obligatorio")
@@ -39,4 +38,5 @@ public class PhotographyPackageUploadRequest {
 	@NotEmpty(message = "Las características son obligatorias")
 	@Size(min = 1, max = 20, message = "Debe haber entre 1 y 20 características")
 	private List<@NotBlank(message = "Cada característica debe tener contenido") @Size(max = 200, message = "Cada característica no puede exceder los 200 caracteres") String> features;
+
 }

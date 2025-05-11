@@ -11,12 +11,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.artiles_photography_backend.dtos.GalleryRequest;
 import com.artiles_photography_backend.dtos.GalleryResponse;
+import com.artiles_photography_backend.dtos.GalleryImageUpdateRequest;
 import com.artiles_photography_backend.dtos.GalleryUploadRequest;
 import com.artiles_photography_backend.services.GalleryService;
 
@@ -54,10 +53,10 @@ public class GalleryController {
 		return ResponseEntity.status(201).body(galleryService.createGalleryImage(request));
 	}
 
-	@PutMapping("/admin/gallery/{id}")
+	@PutMapping(value = "/admin/gallery/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<GalleryResponse> updateGalleryImage(
-			@PathVariable Long id, @Valid @RequestBody GalleryRequest request) {
+			@PathVariable Long id, @Valid @ModelAttribute GalleryImageUpdateRequest request) {
 		return ResponseEntity.ok(galleryService.updateGalleryImage(id, request));
 	}
 

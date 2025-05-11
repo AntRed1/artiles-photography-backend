@@ -70,6 +70,10 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/testimonials").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/testimonials/all").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/testimonials").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/testimonials/{id}").permitAll()
+						.requestMatchers(HttpMethod.PUT, "/api/testimonials/{id}").hasRole("ADMIN") // Cambiado
+						.requestMatchers(HttpMethod.PATCH, "/api/testimonials/{id}/toggle-enable").hasRole("ADMIN") // Cambiado
+						.requestMatchers(HttpMethod.DELETE, "/api/testimonials/{id}").hasRole("ADMIN") // Cambiado
 						.requestMatchers(HttpMethod.GET, "/api/information").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information/{id}").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information/by-title/{title}").permitAll()
@@ -89,7 +93,7 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/config/{id}").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/config/hero").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/legal").permitAll()
-						.requestMatchers("/api/admin/**").hasRole("ADMIN")
+						.requestMatchers("/api/admin/**").hasRole("ADMIN") // Cambiado
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -101,7 +105,7 @@ public class SecurityConfig {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(
 				List.of("http://localhost:5173", "http://localhost:3000", "https://artilesphotography.com"));
-		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("*"));
 		configuration.setAllowCredentials(true);
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

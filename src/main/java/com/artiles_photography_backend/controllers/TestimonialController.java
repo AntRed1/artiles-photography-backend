@@ -1,6 +1,7 @@
 package com.artiles_photography_backend.controllers;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,7 +43,6 @@ public class TestimonialController {
 	}
 
 	@GetMapping("/all")
-	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<List<TestimonialResponse>> getAllTestimonialsAdmin() {
 		return ResponseEntity.ok(testimonialService.getAllTestimonialsAdmin());
 	}
@@ -58,23 +58,23 @@ public class TestimonialController {
 		return ResponseEntity.status(201).body(testimonialService.createTestimonial(request, httpRequest));
 	}
 
-	@PutMapping("/admin/testimonials/{id}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PutMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')") // Cambiado de hasAuthority a hasRole
 	public ResponseEntity<TestimonialResponse> updateTestimonial(
 			@PathVariable Long id, @Valid @RequestBody TestimonialRequest request) {
 		return ResponseEntity.ok(testimonialService.updateTestimonial(id, request));
 	}
 
-	@PatchMapping("/admin/testimonials/{id}/toggle-enable")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PatchMapping("/{id}/toggle-enable")
+	@PreAuthorize("hasRole('ADMIN')") // Cambiado de hasAuthority a hasRole
 	public ResponseEntity<TestimonialResponse> toggleEnable(@PathVariable Long id) {
 		return ResponseEntity.ok(testimonialService.toggleEnable(id));
 	}
 
-	@DeleteMapping("/admin/testimonials/{id}")
+	@DeleteMapping("/{id}")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<Void> deleteTestimonial(@PathVariable Long id) {
+	public ResponseEntity<Map<String, String>> deleteTestimonial(@PathVariable Long id) {
 		testimonialService.deleteTestimonial(id);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.ok(Map.of("message", "Testimonio eliminado"));
 	}
 }
