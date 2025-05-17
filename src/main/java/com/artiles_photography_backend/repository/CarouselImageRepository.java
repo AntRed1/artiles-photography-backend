@@ -8,10 +8,9 @@ import org.springframework.stereotype.Repository;
 import com.artiles_photography_backend.models.CarouselImage;
 
 /**
- *
  * @author arojas
  */
 @Repository
 public interface CarouselImageRepository extends JpaRepository<CarouselImage, Long> {
-    List<CarouselImage> findAllByOrderByDisplayOrderAsc();
+    List<CarouselImage> findAllByOrderByIdAsc();
 }
