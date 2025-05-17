@@ -48,19 +48,19 @@ public class LegalController {
         return ResponseEntity.ok(legalService.getLegalByType(type));
     }
 
-    @PostMapping("/admin/legal")
+    @PostMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LegalResponse> createLegal(@Valid @RequestBody LegalRequest request) {
         return ResponseEntity.status(201).body(legalService.createLegal(request));
     }
 
-    @PutMapping("/admin/legal/{id}")
+    @PutMapping("/admin/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LegalResponse> updateLegal(@PathVariable Long id, @Valid @RequestBody LegalRequest request) {
         return ResponseEntity.ok(legalService.updateLegal(id, request));
     }
 
-    @DeleteMapping("/admin/legal/{id}")
+    @DeleteMapping("/admin/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteLegal(@PathVariable Long id) {
         legalService.deleteLegal(id);

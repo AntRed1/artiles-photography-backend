@@ -71,29 +71,30 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/testimonials/all").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/testimonials").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/testimonials/{id}").permitAll()
-						.requestMatchers(HttpMethod.PUT, "/api/testimonials/{id}").hasRole("ADMIN") // Cambiado
-						.requestMatchers(HttpMethod.PATCH, "/api/testimonials/{id}/toggle-enable").hasRole("ADMIN") // Cambiado
-						.requestMatchers(HttpMethod.DELETE, "/api/testimonials/{id}").hasRole("ADMIN") // Cambiado
+						.requestMatchers(HttpMethod.PUT, "/api/testimonials/{id}").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.PATCH, "/api/testimonials/{id}/toggle-enable").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.DELETE, "/api/testimonials/{id}").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.GET, "/api/information").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information/{id}").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/information/by-title/{title}").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/gallery").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/gallery/{id}").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/gallery/admin/gallery/upload").authenticated()
-						.requestMatchers(HttpMethod.PUT, "/api/gallery/admin/gallery/{id}").authenticated()
-						.requestMatchers(HttpMethod.DELETE, "/api/gallery/admin/gallery/{id}").authenticated()
+						.requestMatchers(HttpMethod.POST, "/api/gallery/admin/gallery/upload").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.PUT, "/api/gallery/admin/gallery/{id}").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.DELETE, "/api/gallery/admin/gallery/{id}").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.GET, "/api/packages").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/packages/{id}").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/packages/active").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/carousel").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/carousel/upload").authenticated()
-						.requestMatchers(HttpMethod.PUT, "/api/carousel/{id}").authenticated()
-						.requestMatchers(HttpMethod.DELETE, "/api/carousel/{id}").authenticated()
+						.requestMatchers(HttpMethod.POST, "/api/carousel/upload").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.PUT, "/api/carousel/{id}").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.DELETE, "/api/carousel/{id}").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.GET, "/api/config").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/config/{id}").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/config/hero").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/legal").permitAll()
-						.requestMatchers("/api/admin/**").hasRole("ADMIN") // Cambiado
+						.requestMatchers(HttpMethod.GET, "/api/legal/**").permitAll() // Allow all GET requests under /api/legal
+						.requestMatchers(HttpMethod.PUT, "/api/contact-info/admin/{id}").hasRole("ADMIN")
+						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

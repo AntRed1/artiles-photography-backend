@@ -11,7 +11,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- *
  * @author arojas
  */
 @Entity
@@ -28,5 +27,20 @@ public class Configuration {
 	private String logoUrl;
 
 	@Column
+	private String logoPublicId;
+
+	@Column
+	private String logoAltText;
+
+	@Column
 	private String heroBackgroundImage;
+
+	@Column
+	private String availabilityMessage;
+
+	@Column
+	private String responseTime;
+
+	@Column
+	private Boolean notificationsEnabled;
 }

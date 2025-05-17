@@ -1,14 +1,17 @@
 package com.artiles_photography_backend.config;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +38,8 @@ import com.artiles_photography_backend.repository.PhotographyServiceRepository;
 import com.artiles_photography_backend.repository.RoleRepository;
 import com.artiles_photography_backend.repository.TestimonialRepository;
 import com.artiles_photography_backend.repository.UserRepository;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 
 /**
  * @author arojas
@@ -45,6 +50,7 @@ import com.artiles_photography_backend.repository.UserRepository;
 public class DataInitializer implements CommandLineRunner {
 
         private static final Logger logger = LoggerFactory.getLogger(DataInitializer.class);
+        private static final String CLOUDINARY_FOLDER = "photoquince/logo";
 
         private final GalleryRepository galleryRepository;
         private final PhotographyPackageRepository photographyPackageRepository;
@@ -58,6 +64,7 @@ public class DataInitializer implements CommandLineRunner {
         private final UserRepository userRepository;
         private final RoleRepository roleRepository;
         private final PasswordEncoder passwordEncoder;
+        private final Cloudinary cloudinary;
 
         public DataInitializer(
                         GalleryRepository galleryRepository,
@@ -71,7 +78,8 @@ public class DataInitializer implements CommandLineRunner {
                         ConfigurationRepository configurationRepository,
                         UserRepository userRepository,
                         RoleRepository roleRepository,
-                        PasswordEncoder passwordEncoder) {
+                        PasswordEncoder passwordEncoder,
+                        Cloudinary cloudinary) {
                 this.galleryRepository = galleryRepository;
                 this.photographyPackageRepository = photographyPackageRepository;
                 this.testimonialRepository = testimonialRepository;
@@ -84,6 +92,7 @@ public class DataInitializer implements CommandLineRunner {
                 this.userRepository = userRepository;
                 this.roleRepository = roleRepository;
                 this.passwordEncoder = passwordEncoder;
+                this.cloudinary = cloudinary;
         }
 
         @Override
@@ -333,9 +342,9 @@ public class DataInitializer implements CommandLineRunner {
                 if (legalRepository.count() == 0) {
                         logger.info("Inicializando documentos legales...");
                         legalRepository.saveAll(Arrays.asList(
-                                        new Legal(null, "PRIVACY",
+                                        new Legal(null, "PRIVACY_POLICY",
                                                         "En Artiles Photography Studio, respetamos tu privacidad. Recopilamos información personal como nombre, correo electrónico, y datos de contacto solo con tu consentimiento. También podemos recopilar información técnica como el dispositivo, dirección IP, y ubicación geográfica para mejorar nuestros servicios y analizar el uso de nuestro sitio web. No compartimos tus datos con terceros sin tu permiso, salvo lo requerido por ley. Consulta nuestra política completa en nuestro sitio web."),
-                                        new Legal(null, "TERMS",
+                                        new Legal(null, "TERMS_AND_CONDITIONS",
                                                         "Al usar nuestros servicios, aceptas nuestros términos y condiciones. Nos reservamos el derecho de modificar estos términos en cualquier momento.")));
                         logger.info("Documentos legales inicializados. Total: {}", legalRepository.count());
                 } else {
@@ -347,11 +356,42 @@ public class DataInitializer implements CommandLineRunner {
         private void initializeConfiguration() {
                 if (configurationRepository.count() == 0) {
                         logger.info("Inicializando configuración...");
-                        configurationRepository.save(new Configuration(
-                                        null,
-                                        "/images/logo.png",
-                                        "/images/hero-background.jpg"));
-                        logger.info("Configuración inicializada. Total: {}", configurationRepository.count());
+                        Configuration config = new Configuration();
+                        config.setLogoAltText("Artiles Photography Studio Logo");
+                        config.setHeroBackgroundImage("/images/hero-background.jpg");
+                        config.setAvailabilityMessage(
+                                        "Estamos disponibles para sesiones fotográficas según su conveniencia. Contáctenos para agendar.");
+                        config.setResponseTime("1-2 horas");
+                        config.setNotificationsEnabled(true);
+
+                        try {
+                                // Load default logo from resources
+                                ClassPathResource logoResource = new ClassPathResource("static/images/logo.png");
+                                if (!logoResource.exists()) {
+                                        logger.warn("Archivo de logo por defecto no encontrado en static/images/logo.png. Usando URL temporal.");
+                                        config.setLogoUrl("https://res.cloudinary.com/demo/image/upload/sample.jpg");
+                                        config.setLogoPublicId("sample");
+                                } else {
+                                        byte[] logoBytes = logoResource.getInputStream().readAllBytes();
+                                        Map uploadResult = cloudinary.uploader().upload(logoBytes,
+                                                        ObjectUtils.asMap("folder", CLOUDINARY_FOLDER));
+                                        config.setLogoUrl((String) uploadResult.get("secure_url"));
+                                        config.setLogoPublicId((String) uploadResult.get("public_id"));
+                                        logger.info("Logo subido a Cloudinary con public_id: {}",
+                                                        config.getLogoPublicId());
+                                }
+                                configurationRepository.save(config);
+                                logger.info("Configuración inicializada. Total: {}", configurationRepository.count());
+                        } catch (IOException e) {
+                                logger.error("Error al subir logo a Cloudinary durante inicialización: {}",
+                                                e.getMessage());
+                                // Fallback to a default URL if Cloudinary upload fails
+                                config.setLogoUrl("https://res.cloudinary.com/demo/image/upload/sample.jpg");
+                                config.setLogoPublicId("sample");
+                                configurationRepository.save(config);
+                                logger.info("Configuración inicializada con logo por defecto debido a error. Total: {}",
+                                                configurationRepository.count());
+                        }
                 } else {
                         logger.info("Configuración ya existe. Total: {}", configurationRepository.count());
                 }

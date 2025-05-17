@@ -1,6 +1,7 @@
 package com.artiles_photography_backend.dtos;
 
-import jakarta.validation.constraints.NotBlank;
+import org.springframework.web.multipart.MultipartFile;
+
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -8,10 +9,8 @@ import lombok.Data;
  * @author arojas
  */
 @Data
-public class ConfigurationRequest {
-    @NotBlank(message = "La URL del logo es obligatoria")
-    @Size(max = 255, message = "La URL del logo no puede exceder los 255 caracteres")
-    private String logoUrl;
+public class ConfigurationUploadRequest {
+    private MultipartFile logoFile;
 
     @Size(max = 255, message = "El texto alternativo del logo no puede exceder los 255 caracteres")
     private String logoAltText;

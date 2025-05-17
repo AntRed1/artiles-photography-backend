@@ -17,6 +17,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 
 import jakarta.annotation.PostConstruct;
 
@@ -50,7 +51,7 @@ public class JwtService {
 		try {
 			logger.debug("Generando token para usuario: {}", userDetails.getUsername());
 			String name = (userDetails instanceof User) ? ((User) userDetails).getName() : "";
-			return JWT.create()
+			String token = JWT.create()
 					.withSubject(userDetails.getUsername())
 					.withIssuer(issuer)
 					.withIssuedAt(new Date())
@@ -60,8 +61,10 @@ public class JwtService {
 							.map(GrantedAuthority::getAuthority)
 							.collect(Collectors.toList()))
 					.sign(algorithm);
+			logger.debug("Token generado para {}: {}", userDetails.getUsername(), token);
+			return token;
 		} catch (JWTCreationException e) {
-			logger.error("Error al generar token para usuario {}: {}", userDetails.getUsername(), e.getMessage());
+			logger.error("Error al generar token para usuario {}: {}", userDetails.getUsername(), e.getMessage(), e);
 			throw new JwtGenerationException("Error al generar el token JWT", e);
 		}
 	}
@@ -69,43 +72,54 @@ public class JwtService {
 	public String getEmailFromToken(String token) {
 		try {
 			logger.debug("Extrayendo email del token");
-			return JWT.require(algorithm)
+			DecodedJWT decodedJWT = JWT.require(algorithm)
 					.withIssuer(issuer)
 					.build()
-					.verify(token)
-					.getSubject();
+					.verify(token);
+			String email = decodedJWT.getSubject();
+			logger.debug("Email extraído: {}, Issuer: {}, ExpiresAt: {}", email, decodedJWT.getIssuer(),
+					decodedJWT.getExpiresAt());
+			return email;
 		} catch (JWTVerificationException e) {
-			logger.warn("Token JWT inválido: {}", e.getMessage());
-			throw new JwtValidationException("Token JWT inválido", e);
+			logger.warn("Error al extraer email del token: {}", e.getMessage(), e);
+			throw new JwtValidationException("Token JWT inválido: " + e.getMessage(), e);
 		}
 	}
 
 	public boolean validateToken(String token, UserDetails userDetails) {
 		try {
 			String email = getEmailFromToken(token);
-			boolean isValid = email.equals(userDetails.getUsername()) && !isTokenExpired(token);
-			logger.debug("Validación de token para {}: {}", email, isValid ? "válido" : "inválido");
+			boolean isExpired = isTokenExpired(token);
+			boolean isValid = email.equals(userDetails.getUsername()) && !isExpired;
+			logger.debug("Validación de token para {}: isValid={}, emailMatch={}, isExpired={}, authorities={}",
+					email, isValid, email.equals(userDetails.getUsername()), isExpired, userDetails.getAuthorities());
+			if (!isValid) {
+				if (!email.equals(userDetails.getUsername())) {
+					logger.warn("El email del token ({}) no coincide con el usuario ({})", email, userDetails.getUsername());
+				}
+				if (isExpired) {
+					logger.warn("Token expirado para usuario: {}", email);
+				}
+			}
 			return isValid;
 		} catch (JwtValidationException e) {
-			logger.warn("Validación de token fallida: {}", e.getMessage());
+			logger.warn("Validación de token fallida: {}", e.getMessage(), e);
 			return false;
 		}
 	}
 
 	private boolean isTokenExpired(String token) {
 		try {
-			Date expirationDate = JWT.require(algorithm)
+			DecodedJWT decodedJWT = JWT.require(algorithm)
 					.withIssuer(issuer)
 					.build()
-					.verify(token)
-					.getExpiresAt();
+					.verify(token);
+			Date expirationDate = decodedJWT.getExpiresAt();
 			boolean expired = expirationDate.before(new Date());
-			if (expired) {
-				logger.debug("Token expirado en: {}", expirationDate);
-			}
+			logger.debug("Verificación de expiración: expiresAt={}, expired={}", expirationDate, expired);
 			return expired;
 		} catch (JWTVerificationException e) {
-			logger.warn("Error al verificar expiración del token: {}", e.getMessage());
+			logger.warn("Error al verificar expiración del token: {}", e.getMessage(), e);
 			return true;
 		}
 	}
