@@ -15,5 +15,6 @@ public class PhotographyPackageResponse {
 	private String description;
 	private Double price;
 	private Boolean isActive;
+	private Boolean showPrice;
 	private List<String> features;
 }

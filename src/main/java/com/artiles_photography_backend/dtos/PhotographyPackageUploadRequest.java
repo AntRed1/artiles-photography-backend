@@ -35,6 +35,9 @@ public class PhotographyPackageUploadRequest {
 	@NotNull(message = "El estado activo es obligatorio")
 	private Boolean isActive;
 
+	@NotNull(message = "La visibilidad del precio es obligatoria")
+	private Boolean showPrice;
+
 	@NotEmpty(message = "Las características son obligatorias")
 	@Size(min = 1, max = 20, message = "Debe haber entre 1 y 20 características")
 	private List<@NotBlank(message = "Cada característica debe tener contenido") @Size(max = 200, message = "Cada característica no puede exceder los 200 caracteres") String> features;

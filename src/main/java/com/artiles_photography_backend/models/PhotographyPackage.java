@@ -47,10 +47,14 @@ public class PhotographyPackage {
     private Boolean isActive;
 
     @Column(nullable = false)
+    private Boolean showPrice;
+
+    @Column(nullable = false)
     private String imageUrl;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "package_features", joinColumns = @JoinColumn(name = "package_id"))
     @Column(name = "feature")
     private List<String> features;
+
 }

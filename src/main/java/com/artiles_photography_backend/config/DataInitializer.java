@@ -24,8 +24,8 @@ import com.artiles_photography_backend.models.Gallery;
 import com.artiles_photography_backend.models.Legal;
 import com.artiles_photography_backend.models.PhotographyPackage;
 import com.artiles_photography_backend.models.PhotographyService;
-import com.artiles_photography_backend.models.Role;
 import com.artiles_photography_backend.models.Testimonial;
+import com.artiles_photography_backend.models.Role;
 import com.artiles_photography_backend.models.User;
 import com.artiles_photography_backend.repository.AboutUsRepository;
 import com.artiles_photography_backend.repository.CarouselImageRepository;
@@ -197,33 +197,33 @@ public class DataInitializer implements CommandLineRunner {
                         logger.info("Inicializando paquetes fotográficos...");
                         photographyPackageRepository.saveAll(Arrays.asList(
                                         new PhotographyPackage(null, "Paquete Quinceañeras",
-                                                        "Sesión completa para quinceañeras", 500.0, true,
+                                                        "Sesión completa para quinceañeras", 500.0, true, true,
                                                         "/images/package1.jpg", Arrays.asList(
                                                                         "Sesión de 4 horas", "50 fotos editadas",
                                                                         "3 cambios de vestuario", "Entrega digital",
                                                                         "Álbum digital")),
                                         new PhotographyPackage(null, "Paquete Bodas", "Cobertura total de bodas",
-                                                        1500.0, true, "/images/package2.jpg", Arrays.asList(
+                                                        1500.0, true, true, "/images/package2.jpg", Arrays.asList(
                                                                         "Sesión de 8 horas", "200 fotos editadas",
                                                                         "Sesión pre-boda", "Entrega digital",
                                                                         "Video highlights", "USB personalizado")),
                                         new PhotographyPackage(null, "Paquete Graduación", "Sesión para graduaciones",
-                                                        300.0, true, "/images/package3.jpg", Arrays.asList(
+                                                        300.0, true, true, "/images/package3.jpg", Arrays.asList(
                                                                         "Sesión de 2 horas", "30 fotos editadas",
                                                                         "2 cambios de vestuario", "Entrega digital",
                                                                         "Álbum digital")),
-                                        new PhotographyPackage(null, "Paquete Familiar", "Sesión para familias", 400.0,
-                                                        true, "/images/package4.jpg", Arrays.asList(
+                                        new PhotographyPackage(null, "Paquete Familiar", "Sesión para familias",
+                                                        400.0, true, true, "/images/package4.jpg", Arrays.asList(
                                                                         "Sesión de 3 horas", "40 fotos editadas",
                                                                         "Múltiples locaciones", "Entrega digital",
                                                                         "Álbum digital")),
-                                        new PhotographyPackage(null, "Paquete Bebés", "Sesión para bebés", 250.0, false,
-                                                        "/images/package5.jpg", Arrays.asList(
+                                        new PhotographyPackage(null, "Paquete Bebés", "Sesión para bebés",
+                                                        250.0, false, false, "/images/package5.jpg", Arrays.asList(
                                                                         "Sesión de 2 horas", "25 fotos editadas",
                                                                         "Props especiales", "Entrega digital",
                                                                         "Álbum digital")),
-                                        new PhotographyPackage(null, "Paquete Eventos", "Cobertura de eventos", 800.0,
-                                                        true, "/images/package6.jpg", Arrays.asList(
+                                        new PhotographyPackage(null, "Paquete Eventos", "Cobertura de eventos",
+                                                        800.0, true, true, "/images/package6.jpg", Arrays.asList(
                                                                         "Sesión de 6 horas", "150 fotos editadas",
                                                                         "Fotografía grupal", "Entrega digital",
                                                                         "Galería en línea"))));
