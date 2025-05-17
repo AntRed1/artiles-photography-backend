@@ -8,10 +8,10 @@ import org.springframework.stereotype.Repository;
 import com.artiles_photography_backend.models.Gallery;
 
 /**
- *
  * @author arojas
+ *         Repositorio para operaciones CRUD sobre la entidad Gallery.
  */
 @Repository
 public interface GalleryRepository extends JpaRepository<Gallery, Long> {
-	List<Gallery> findByDescriptionContaining(String type); // e.g., 'carousel' or 'gallery'
+	List<Gallery> findAllByOrderByUploadedAtDesc();
 }

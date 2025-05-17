@@ -1,6 +1,8 @@
 package com.artiles_photography_backend.repository;
 
-import org.springframework.data.repository.CrudRepository;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.artiles_photography_backend.models.PhotographyService;
@@ -10,8 +12,9 @@ import com.artiles_photography_backend.models.PhotographyService;
  * @author arojas
  *         * Repositorio para operaciones CRUD sobre la entidad
  *         PhotographyService.
- * 
+ *
  */
 @Repository
-public interface PhotographyServiceRepository extends CrudRepository<PhotographyService, Long> {
+public interface PhotographyServiceRepository extends JpaRepository<PhotographyService, Long> {
+	Optional<PhotographyService> findByTitle(String title);
 }
