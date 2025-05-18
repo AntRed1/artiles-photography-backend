@@ -1,5 +1,5 @@
 # Etapa 1: Construir el proyecto
-FROM maven:3.8.6-openjdk-17 AS builder
+FROM maven:3-openjdk-17 AS builder
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
