@@ -124,11 +124,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Depuración adicional
         logger.debug("Ruta original: {}", request.getRequestURI());
         logger.debug("Ruta normalizada: {}", path);
-        // Probar patrones con y sin prefijo /api/
-        boolean shouldNotFilter = pathMatcher.match("/actuator/**", path) ||
+        // Solo bypass para /actuator/health y endpoints públicos
+        boolean shouldNotFilter = pathMatcher.match("/actuator/health", path) ||
                 pathMatcher.match("/api/auth/**", path) ||
-                pathMatcher.match("/*/actuator/**", path) ||
-                pathMatcher.match("/*/api/auth/**", path) ||
                 (pathMatcher.match("/api/contact", path) && method.equals("POST")) ||
                 (pathMatcher.match("/contact", path) && method.equals("POST")) ||
                 pathMatcher.match("/api/services/**", path) && method.equals("GET") ||

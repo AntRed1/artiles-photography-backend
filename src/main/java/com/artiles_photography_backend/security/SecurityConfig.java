@@ -59,9 +59,10 @@ public class SecurityConfig {
 									.write("{\"error\": \"Acceso denegado. No tienes permisos suficientes.\"}");
 						}))
 				.authorizeHttpRequests(auth -> auth
-						// Permitir acceso a todos los endpoints de Actuator sin autenticación
-						.requestMatchers("/actuator/**").permitAll()
-						// Mantener reglas de seguridad para otros endpoints
+						// Permitir acceso público a /actuator/health
+						.requestMatchers("/actuator/health").permitAll()
+						// Restringir otros endpoints de actuator a ADMIN
+						.requestMatchers("/actuator/**").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/contact-info").permitAll()
