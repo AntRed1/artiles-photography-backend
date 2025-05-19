@@ -202,11 +202,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <suppressionFiles>
-                        <suppressionFile>${project.basedir}/dependency-check-suppressions.xml</suppressionFile>
-                    </suppressionFiles>
-                </configuration>
             </plugin>
         </plugins>
     </build>

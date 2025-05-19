@@ -59,8 +59,8 @@ public class SecurityConfig {
 									.write("{\"error\": \"Acceso denegado. No tienes permisos suficientes.\"}");
 						}))
 				.authorizeHttpRequests(auth -> auth
-						// Permitir acceso a los endpoints de Actuator sin autenticación
-						.requestMatchers("/actuator/health", "/actuator/metrics", "/actuator/info").permitAll()
+						// Permitir acceso a todos los endpoints de Actuator sin autenticación
+						.requestMatchers("/actuator/**").permitAll()
 						// Mantener reglas de seguridad para otros endpoints
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
@@ -70,30 +70,27 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/testimonials").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/testimonials/all").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/testimonials").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/testimonials/{id}").permitAll()
-						.requestMatchers(HttpMethod.PUT, "/api/testimonials/{id}").hasRole("ADMIN")
-						.requestMatchers(HttpMethod.PATCH, "/api/testimonials/{id}/toggle-enable").hasRole("ADMIN")
-						.requestMatchers(HttpMethod.DELETE, "/api/testimonials/{id}").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.GET, "/api/testimonials/**").permitAll()
+						.requestMatchers(HttpMethod.PUT, "/api/testimonials/**").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.PATCH, "/api/testimonials/**").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.DELETE, "/api/testimonials/**").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.GET, "/api/information").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/information/{id}").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/information/by-title/{title}").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/information/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/gallery").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/gallery/{id}").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/gallery/admin/gallery/upload").hasRole("ADMIN")
-						.requestMatchers(HttpMethod.PUT, "/api/gallery/admin/gallery/{id}").hasRole("ADMIN")
-						.requestMatchers(HttpMethod.DELETE, "/api/gallery/admin/gallery/{id}").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.GET, "/api/gallery/**").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/gallery/admin/**").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.PUT, "/api/gallery/admin/**").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.DELETE, "/api/gallery/admin/**").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.GET, "/api/packages").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/packages/{id}").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/packages/active").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/packages/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/carousel").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/carousel/upload").hasRole("ADMIN")
-						.requestMatchers(HttpMethod.PUT, "/api/carousel/{id}").hasRole("ADMIN")
-						.requestMatchers(HttpMethod.DELETE, "/api/carousel/{id}").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.POST, "/api/carousel/**").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.PUT, "/api/carousel/**").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.DELETE, "/api/carousel/**").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.GET, "/api/config").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/config/{id}").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/config/hero").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/legal/**").permitAll() // Allow all GET requests under /api/legal
-						.requestMatchers(HttpMethod.PUT, "/api/contact-info/admin/{id}").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.GET, "/api/config/**").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/legal/**").permitAll()
+						.requestMatchers(HttpMethod.PUT, "/api/contact-info/admin/**").hasRole("ADMIN")
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -105,7 +102,8 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(
-				List.of("http://localhost:5173", "http://localhost:3000", "https://artilesphotography.com"));
+				List.of("http://localhost:5173", "http://localhost:3000", "https://artilesphotography.com",
+						"http://localhost"));
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("*"));
 		configuration.setAllowCredentials(true);
