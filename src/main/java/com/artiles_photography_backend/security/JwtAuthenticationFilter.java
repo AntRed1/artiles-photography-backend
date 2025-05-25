@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.artiles_photography_backend.repository.JwtBlacklistRepository;
 import com.artiles_photography_backend.services.JwtService;
 
 import jakarta.servlet.FilterChain;
@@ -31,11 +33,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final JwtBlacklistRepository jwtBlacklistRepository;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+    @Autowired
+    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService,
+            JwtBlacklistRepository jwtBlacklistRepository) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.jwtBlacklistRepository = jwtBlacklistRepository;
     }
 
     @Override
@@ -62,6 +68,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
         logger.debug("Token JWT extraído: {}", token);
+
+        // Check if token is blacklisted
+        if (jwtBlacklistRepository.existsByToken(token)) {
+            logger.warn("Token JWT está en la lista negra: {}", token);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Token JWT ha sido invalidado\"}");
+            return;
+        }
 
         try {
             String email = jwtService.getEmailFromToken(token);
@@ -126,7 +141,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         logger.debug("Ruta normalizada: {}", path);
         // Solo bypass para /actuator/health y endpoints públicos
         boolean shouldNotFilter = pathMatcher.match("/actuator/health", path) ||
-                pathMatcher.match("/api/auth/**", path) ||
+                pathMatcher.match("/api/auth/login", path) ||
+                pathMatcher.match("/api/auth/register", path) ||
+                pathMatcher.match("/api/auth/logout", path) ||
                 (pathMatcher.match("/api/contact", path) && method.equals("POST")) ||
                 (pathMatcher.match("/contact", path) && method.equals("POST")) ||
                 pathMatcher.match("/api/services/**", path) && method.equals("GET") ||

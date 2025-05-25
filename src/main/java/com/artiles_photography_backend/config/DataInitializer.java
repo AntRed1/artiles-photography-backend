@@ -24,8 +24,8 @@ import com.artiles_photography_backend.models.Gallery;
 import com.artiles_photography_backend.models.Legal;
 import com.artiles_photography_backend.models.PhotographyPackage;
 import com.artiles_photography_backend.models.PhotographyService;
-import com.artiles_photography_backend.models.Testimonial;
 import com.artiles_photography_backend.models.Role;
+import com.artiles_photography_backend.models.Testimonial;
 import com.artiles_photography_backend.models.User;
 import com.artiles_photography_backend.repository.AboutUsRepository;
 import com.artiles_photography_backend.repository.CarouselImageRepository;
@@ -325,7 +325,9 @@ public class DataInitializer implements CommandLineRunner {
                                         new PhotographyService(null, "Sombrillas Creativas", "fa-umbrella"));
 
                         for (PhotographyService service : services) {
-                                if (photographyServiceRepository.findByTitle(service.getTitle()).isEmpty()) {
+                                if (photographyServiceRepository
+
+                                                .findByTitle(service.getTitle()).isEmpty()) {
                                         photographyServiceRepository.save(service);
                                 }
                         }

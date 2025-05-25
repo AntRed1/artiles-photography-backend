@@ -1,9 +1,11 @@
 package com.artiles_photography_backend.controllers;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,12 +25,13 @@ import com.artiles_photography_backend.dtos.RegisterRequest;
 import com.artiles_photography_backend.dtos.UpdateUserRequest;
 import com.artiles_photography_backend.dtos.UpdateUserRolesRequest;
 import com.artiles_photography_backend.dtos.UserResponse;
+import com.artiles_photography_backend.models.JwtBlacklist;
+import com.artiles_photography_backend.repository.JwtBlacklistRepository;
 import com.artiles_photography_backend.services.AuthService;
 
 import jakarta.validation.Valid;
 
 /**
- *
  * @author arojas
  */
 @RestController
@@ -35,9 +39,12 @@ import jakarta.validation.Valid;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtBlacklistRepository jwtBlacklistRepository;
 
-    public AuthController(AuthService authService) {
+    @Autowired
+    public AuthController(AuthService authService, JwtBlacklistRepository jwtBlacklistRepository) {
         this.authService = authService;
+        this.jwtBlacklistRepository = jwtBlacklistRepository;
     }
 
     @PostMapping("/auth/register")
@@ -48,6 +55,21 @@ public class AuthController {
     @PostMapping("/auth/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/auth/logout")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> logout(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            JwtBlacklist blacklist = new JwtBlacklist();
+            blacklist.setToken(token);
+            blacklist.setExpiryDate(LocalDateTime.now().plusHours(24)); // Match JWT expiry
+            jwtBlacklistRepository.save(blacklist);
+        }
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Sesión cerrada correctamente");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/admin/users")

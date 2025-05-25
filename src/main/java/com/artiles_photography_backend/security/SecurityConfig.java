@@ -18,6 +18,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.artiles_photography_backend.repository.JwtBlacklistRepository;
 import com.artiles_photography_backend.services.JwtService;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,15 +35,19 @@ public class SecurityConfig {
 
 	private final JwtService jwtService;
 	private final UserDetailsService userDetailsService;
+	private final JwtBlacklistRepository jwtBlacklistRepository;
 
-	public SecurityConfig(JwtService jwtService, UserDetailsService userDetailsService) {
+	public SecurityConfig(JwtService jwtService, UserDetailsService userDetailsService,
+			JwtBlacklistRepository jwtBlacklistRepository) {
 		this.jwtService = jwtService;
 		this.userDetailsService = userDetailsService;
+		this.jwtBlacklistRepository = jwtBlacklistRepository;
 	}
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtService, userDetailsService);
+		JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtService, userDetailsService,
+				jwtBlacklistRepository);
 
 		http
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -64,7 +69,8 @@ public class SecurityConfig {
 						// Restringir otros endpoints de actuator a ADMIN
 						.requestMatchers("/actuator/**").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
 						.requestMatchers(HttpMethod.GET, "/api/contact-info").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/services").permitAll()
@@ -92,7 +98,11 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/config/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/legal/**").permitAll()
 						.requestMatchers(HttpMethod.PUT, "/api/contact-info/admin/**").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.GET, "/api/analytics/notifications").authenticated()
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
+						.requestMatchers("/api/analytics/**").hasRole("ADMIN")
+						// Permitir acceso público a /api/cloudinary-metrics
+						.requestMatchers(HttpMethod.GET, "/api/cloudinary-metrics").permitAll()
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -104,7 +114,7 @@ public class SecurityConfig {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(
 				List.of("http://localhost:5173", "http://localhost:3000", "https://artilesphotography.com",
-						"http://localhost"));
+						"http://localhost", "http://artiles.local:8080", "http://artiles.local:3000"));
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("*"));
 		configuration.setAllowCredentials(true);
