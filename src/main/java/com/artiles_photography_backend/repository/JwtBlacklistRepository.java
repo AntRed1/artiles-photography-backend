@@ -13,10 +13,10 @@ import jakarta.transaction.Transactional;
  * @author arojas
  *         Repositorio para gestionar tokens JWT en lista negra.
  */
+@Transactional
 @Repository
 public interface JwtBlacklistRepository extends JpaRepository<JwtBlacklist, Long> {
-	boolean existsByToken(String token);
+	boolean existsByTokenHash(String tokenHash);
 
-	@Transactional
 	int deleteByExpiryDateBefore(LocalDateTime expiryDate);
 }

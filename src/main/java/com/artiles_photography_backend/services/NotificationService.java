@@ -54,6 +54,22 @@ public class NotificationService {
 	}
 
 	/**
+	 * Deletes a notification by ID.
+	 *
+	 * @param id The ID of the notification to delete
+	 * @throws IllegalArgumentException if the notification does not exist
+	 */
+	public void deleteNotification(Long id) {
+		logger.info("Deleting notification with id={}", id);
+		if (!notificationRepository.existsById(id)) {
+			logger.error("Notification with id={} not found", id);
+			throw new IllegalArgumentException("Notification with id " + id + " not found");
+		}
+		notificationRepository.deleteById(id);
+		logger.info("Notification with id={} deleted successfully", id);
+	}
+
+	/**
 	 * Validates notification input parameters.
 	 */
 	private void validateInputs(String icon, String text, String color) {

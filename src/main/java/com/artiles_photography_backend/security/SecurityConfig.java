@@ -1,7 +1,5 @@
 package com.artiles_photography_backend.security;
 
-import java.util.List;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,9 +12,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.artiles_photography_backend.repository.JwtBlacklistRepository;
 import com.artiles_photography_backend.services.JwtService;
@@ -36,42 +31,46 @@ public class SecurityConfig {
 	private final JwtService jwtService;
 	private final UserDetailsService userDetailsService;
 	private final JwtBlacklistRepository jwtBlacklistRepository;
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-	public SecurityConfig(JwtService jwtService, UserDetailsService userDetailsService,
-			JwtBlacklistRepository jwtBlacklistRepository) {
+	public SecurityConfig(
+			JwtService jwtService,
+			UserDetailsService userDetailsService,
+			JwtBlacklistRepository jwtBlacklistRepository,
+			JwtAuthenticationFilter jwtAuthenticationFilter) {
 		this.jwtService = jwtService;
 		this.userDetailsService = userDetailsService;
 		this.jwtBlacklistRepository = jwtBlacklistRepository;
+		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
 	}
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtService, userDetailsService,
-				jwtBlacklistRepository);
-
 		http
-				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 				.csrf(csrf -> csrf.disable())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.exceptionHandling(exceptions -> exceptions
 						.authenticationEntryPoint((request, response, authException) -> {
 							response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+							response.setContentType("application/json");
+							response.setCharacterEncoding("UTF-8");
 							response.getWriter().write("{\"error\": \"No autorizado. Por favor, inicia sesión.\"}");
 						})
 						.accessDeniedHandler((request, response, accessDeniedException) -> {
 							response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+							response.setContentType("application/json");
+							response.setCharacterEncoding("UTF-8");
 							response.getWriter()
 									.write("{\"error\": \"Acceso denegado. No tienes permisos suficientes.\"}");
 						}))
 				.authorizeHttpRequests(auth -> auth
-						// Permitir acceso público a /actuator/health
-						.requestMatchers("/actuator/health").permitAll()
-						// Restringir otros endpoints de actuator a ADMIN
-						.requestMatchers("/actuator/**").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+						.requestMatchers("/actuator/health").permitAll()
+						.requestMatchers("/actuator/**").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
 						.requestMatchers(HttpMethod.GET, "/api/contact-info").permitAll()
+						.requestMatchers(HttpMethod.PUT, "/api/contact-info/admin").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/services").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/testimonials").permitAll()
@@ -97,30 +96,16 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/config").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/config/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/legal/**").permitAll()
-						.requestMatchers(HttpMethod.PUT, "/api/contact-info/admin/**").hasRole("ADMIN")
-						.requestMatchers(HttpMethod.GET, "/api/analytics/notifications").authenticated()
-						.requestMatchers("/api/admin/**").hasRole("ADMIN")
-						.requestMatchers("/api/analytics/**").hasRole("ADMIN")
-						// Permitir acceso público a /api/cloudinary-metrics
 						.requestMatchers(HttpMethod.GET, "/api/cloudinary-metrics").permitAll()
+						.requestMatchers(HttpMethod.DELETE, "/api/cloudinary-metrics/**").permitAll() // Temporal
+						.requestMatchers(HttpMethod.GET, "/api/analytics/notifications").authenticated()
+						.requestMatchers("/api/analytics/**").hasRole("ADMIN")
+						.requestMatchers("/api/admin/**").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.GET, "/api/cloudinary-metrics/images").permitAll()
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
-	}
-
-	@Bean
-	public CorsConfigurationSource corsConfigurationSource() {
-		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(
-				List.of("http://localhost:5173", "http://localhost:3000", "https://artilesphotography.com",
-						"http://localhost", "http://artiles.local:8080", "http://artiles.local:3000"));
-		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-		configuration.setAllowedHeaders(List.of("*"));
-		configuration.setAllowCredentials(true);
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", configuration);
-		return source;
 	}
 
 	@Bean
