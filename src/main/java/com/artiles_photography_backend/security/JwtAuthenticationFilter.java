@@ -27,6 +27,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * @author arojas
+ *
+ */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -149,11 +153,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.setStatus(status);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        response.addHeader("Access-Control-Allow-Origin", "http://localhost:5173");
-        response.addHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS");
-        response.addHeader("Access-Control-Allow-Headers", "*");
-        response.addHeader("Access-Control-Allow-Credentials", "true");
-        response.addHeader("Access-Control-Max-Age", "3600");
         response.getWriter().write("{\"error\": \"" + message + "\"}");
     }
 
@@ -168,6 +167,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         boolean shouldNotFilter = pathMatcher.match("/actuator/health", path) ||
                 pathMatcher.match("/api/auth/login", path) ||
                 pathMatcher.match("/api/auth/register", path) ||
+                pathMatcher.match("/api/auth/google", path) ||
+                pathMatcher.match("/callback", path) ||
                 (pathMatcher.match("/api/contact", path) && method.equals("POST")) ||
                 (pathMatcher.match("/contact", path) && method.equals("POST")) ||
                 (pathMatcher.match("/api/services/**", path) && method.equals("GET")) ||

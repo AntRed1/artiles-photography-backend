@@ -25,4 +25,6 @@ public class ConfigurationUploadRequest {
     private String responseTime;
 
     private Boolean notificationsEnabled;
+
+    private String reminderCron;
 }

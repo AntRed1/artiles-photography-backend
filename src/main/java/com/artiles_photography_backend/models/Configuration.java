@@ -43,4 +43,7 @@ public class Configuration {
 
 	@Column
 	private Boolean notificationsEnabled;
+
+	@Column
+	private String reminderCron;
 }

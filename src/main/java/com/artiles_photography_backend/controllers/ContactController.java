@@ -4,8 +4,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +21,7 @@ import com.artiles_photography_backend.dtos.ContactMessageRequest;
 import com.artiles_photography_backend.dtos.ContactMessageResponse;
 import com.artiles_photography_backend.models.ContactMessage;
 import com.artiles_photography_backend.services.ContactMessageService;
+import com.artiles_photography_backend.services.EmailService;
 
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,28 +29,29 @@ import jakarta.validation.Valid;
 
 /**
  * @author arojas
- *         Controlador REST para manejar peticiones relacionadas con
- *         ContactMessage.
+ *         Controlador REST para la gestión de mensajes de contacto.
+ */
+/**
+ * @author arojas
+ *         Controlador REST para la gestión de mensajes de contacto.
  */
 @RestController
 @RequestMapping("/api/contact")
+@Validated
 public class ContactController {
-
 	private final ContactMessageService contactMessageService;
+	private final EmailService emailService;
 
-	public ContactController(ContactMessageService contactMessageService) {
+	@Autowired
+	public ContactController(ContactMessageService contactMessageService, EmailService emailService) {
 		this.contactMessageService = contactMessageService;
+		this.emailService = emailService;
 	}
 
-	/**
-	 * Recibe un nuevo mensaje de contacto.
-	 * Acceso público.
-	 */
 	@PostMapping
 	public ResponseEntity<Map<String, String>> submitContactForm(
 			@Valid @RequestBody ContactMessageRequest request,
 			HttpServletRequest httpRequest) {
-
 		String clientIp = getClientIp(httpRequest);
 		String userAgent = httpRequest.getHeader("User-Agent");
 
@@ -60,10 +64,8 @@ public class ContactController {
 
 	private String getClientIp(HttpServletRequest request) {
 		String xfHeader = request.getHeader("X-Forwarded-For");
-		return (xfHeader == null || xfHeader.isEmpty()) ? request.getRemoteAddr() : xfHeader;
+		return (xfHeader == null || xfHeader.isEmpty()) ? request.getRemoteAddr() : xfHeader.split(",")[0];
 	}
-
-	// ------------------- Admin Endpoints -------------------
 
 	@GetMapping("/admin/messages")
 	@PreAuthorize("hasRole('ADMIN')")
@@ -104,37 +106,26 @@ public class ContactController {
 		return ResponseEntity.noContent().build();
 	}
 
-	/**
-	 * Sends an email, either resending the confirmation email for a specific
-	 * message or a custom email.
-	 * 
-	 * @param request The email request containing either a messageId for resending
-	 *                or custom email fields.
-	 * @return A response indicating success.
-	 * @throws MessagingException if email sending fails.
-	 */
 	@PostMapping("/admin/messages/send-email")
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Map<String, String>> sendEmail(@Valid @RequestBody EmailRequest request)
 			throws MessagingException {
 		if (request.getMessageId() != null) {
-			// Resend confirmation email for a specific message
-			ContactMessageResponse message = contactMessageService.getContactMessageById(request.getMessageId());
-			ContactMessage contactMessage = new ContactMessage();
-			contactMessage.setId(message.getId());
-			contactMessage.setName(message.getName());
-			contactMessage.setEmail(message.getEmail());
-			contactMessage.setPhone(message.getPhone());
-			contactMessage.setService(message.getService());
-			contactMessage.setMessage(message.getMessage());
-			contactMessage.setClientIp(message.getClientIp());
-			contactMessage.setUserAgent(message.getUserAgent());
-			contactMessage.setCreatedAt(message.getCreatedAt());
-			contactMessageService.sendContactEmail(contactMessage);
+			ContactMessageResponse response = contactMessageService.getContactMessageById(request.getMessageId());
+			ContactMessage message = new ContactMessage();
+			message.setId(response.getId());
+			message.setName(response.getName());
+			message.setEmail(response.getEmail());
+			message.setPhone(response.getPhone());
+			message.setService(response.getService());
+			message.setMessage(response.getMessage());
+			message.setClientIp(response.getClientIp());
+			message.setUserAgent(response.getUserAgent());
+			message.setCreatedAt(response.getCreatedAt());
+			emailService.sendContactEmail(message);
 		} else if (request.getFrom() != null && request.getTo() != null && request.getSubject() != null
 				&& request.getDate() != null && request.getBody() != null) {
-			// Send a custom email
-			contactMessageService.sendCustomEmail(
+			emailService.sendCustomEmail(
 					request.getFrom(),
 					request.getTo(),
 					request.getSubject(),
@@ -150,18 +141,14 @@ public class ContactController {
 		return ResponseEntity.ok(response);
 	}
 
-	/**
-	 * DTO for email sending requests.
-	 */
 	public static class EmailRequest {
-		private Long messageId; // For resending confirmation email
-		private String from; // For custom email
-		private String to; // For custom email
-		private String subject; // For custom email
-		private String date; // For custom email
-		private String body; // For custom email
+		private Long messageId;
+		private String from;
+		private String to;
+		private String subject;
+		private String date;
+		private String body;
 
-		// Getters and setters
 		public Long getMessageId() {
 			return messageId;
 		}
