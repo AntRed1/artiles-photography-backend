@@ -103,4 +103,4 @@ public class AppointmentController {
 		appointmentService.deleteAppointment(id);
 		return ResponseEntity.noContent().build();
 	}
-}  
+}
