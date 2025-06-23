@@ -102,7 +102,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         logger.debug("Token JWT extraído (hash): {}", tokenHash);
 
         if (jwtBlacklistRepository.existsByTokenHash(tokenHash)) {
-            logger.warn("Token JWT está en la lista negra");
+            logger.warn("Token JWT está en la lista negra: {}", token); // Añade el token (no el hash)
             sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token JWT ha sido invalidado");
             return;
         }
@@ -168,7 +168,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 pathMatcher.match("/api/auth/login", path) ||
                 pathMatcher.match("/api/auth/register", path) ||
                 pathMatcher.match("/api/auth/google", path) ||
-                pathMatcher.match("/callback", path) ||
+                pathMatcher.match("/api/calendar/callback", path) ||
+                pathMatcher.match("/favicon.ico", path) ||
                 (pathMatcher.match("/api/contact", path) && method.equals("POST")) ||
                 (pathMatcher.match("/contact", path) && method.equals("POST")) ||
                 (pathMatcher.match("/api/services/**", path) && method.equals("GET")) ||

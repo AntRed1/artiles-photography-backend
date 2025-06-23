@@ -24,9 +24,13 @@
 
 package com.artiles_photography_backend.models;
 
+import java.time.Instant;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,14 +40,21 @@ import lombok.NoArgsConstructor;
  * @author arojas
  */
 @Entity
-@Table(name = "google_credentials")
+@Table(name = "google_credentials", indexes = {
+		@Index(name = "idx_email", columnList = "email")
+})
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class GoogleCredential {
 	@Id
+	@NotBlank(message = "El email no puede estar vacío")
 	private String email;
+
+	@NotBlank(message = "El accessToken no puede estar vacío")
 	private String accessToken;
+
 	private String refreshToken;
-	private Long expiry;
+
+	private Instant expiry;
 }

@@ -31,10 +31,6 @@ import jakarta.validation.Valid;
  * @author arojas
  *         Controlador REST para la gestión de mensajes de contacto.
  */
-/**
- * @author arojas
- *         Controlador REST para la gestión de mensajes de contacto.
- */
 @RestController
 @RequestMapping("/api/contact")
 @Validated

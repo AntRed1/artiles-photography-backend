@@ -27,9 +27,12 @@ package com.artiles_photography_backend.controllers;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -49,58 +52,140 @@ import com.artiles_photography_backend.services.AppointmentService;
 import jakarta.validation.Valid;
 
 /**
- *
  * @author arojas
  *         Controlador REST para la gestión de citas.
  */
 @RestController
-@RequestMapping("/api/appointments")
+@RequestMapping("/api")
 @Validated
 public class AppointmentController {
+
+	private static final Logger logger = LoggerFactory.getLogger(AppointmentController.class);
 	private final AppointmentService appointmentService;
 
-	@Autowired
 	public AppointmentController(AppointmentService appointmentService) {
 		this.appointmentService = appointmentService;
 	}
 
-	@PostMapping
+	@PostMapping("/appointments")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<Appointment> createAppointment(
-			@Valid @RequestBody Appointment appointment,
-			@RequestParam String email) throws IOException {
-		return ResponseEntity.ok(appointmentService.createAppointment(appointment, email));
+	public ResponseEntity<?> createAppointment(@Valid @RequestBody Appointment appointment,
+			@RequestParam String email) {
+		logger.info("Creando cita para el cliente: {}, email: {}", appointment.getClientName(), email);
+		try {
+			if (email == null || email.trim().isEmpty()) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+						.body(Map.of("error", "El correo electrónico es obligatorio"));
+			}
+			Appointment createdAppointment = appointmentService.createAppointment(appointment, email);
+			return ResponseEntity.status(HttpStatus.CREATED).body(createdAppointment);
+		} catch (AppointmentService.AppointmentServiceException e) {
+			logger.error("Error al crear cita: email={}, mensaje={}", email, e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of("error", e.getMessage()));
+		} catch (Exception e) {
+			logger.error("Error inesperado al crear cita: email={}", email, e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(Map.of("error", "Error interno al crear cita"));
+		}
 	}
 
-	@PostMapping("/import")
+	@PostMapping("/appointments/import")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<Void> importGoogleEvents(@RequestParam String email) throws IOException {
-		appointmentService.importGoogleEvents(email);
-		return ResponseEntity.ok().build();
+	public ResponseEntity<?> importGoogleEvents(@RequestParam String email) {
+		logger.info("Importando eventos de Google Calendar para el email: {}", email);
+		try {
+			if (email == null || email.trim().isEmpty()) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+						.body(Map.of("error", "El correo electrónico es obligatorio"));
+			}
+			appointmentService.importGoogleEvents(email);
+			return ResponseEntity.ok().build();
+		} catch (AppointmentService.AppointmentServiceException e) {
+			logger.error("Error al importar eventos: email={}, mensaje={}", email, e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of("error", e.getMessage()));
+		}
 	}
 
-	@GetMapping
+	@GetMapping("/appointments")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<List<Appointment>> getAppointments(
+	public ResponseEntity<?> getAppointments(
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-		return ResponseEntity.ok(appointmentService.getAppointments(start, end));
+		logger.info("Obteniendo citas entre: {} y {}", start, end);
+		try {
+			List<Appointment> appointments = appointmentService.getAppointments(start, end);
+			return ResponseEntity.ok(appointments);
+		} catch (AppointmentService.AppointmentServiceException e) {
+			logger.error("Error al obtener citas: mensaje={}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of("error", e.getMessage()));
+		}
 	}
 
-	@PutMapping("/{id}")
+	@PutMapping("/appointments/{id}")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<Appointment> updateAppointment(
+	public ResponseEntity<?> updateAppointment(
 			@PathVariable Long id,
-			@Valid @RequestBody Appointment appointment,
-			@RequestParam String email) throws IOException {
-		appointment.setClientEmail(email);
-		return ResponseEntity.ok(appointmentService.updateAppointment(id, appointment));
+			@Valid @RequestBody Appointment appointment) {
+		logger.info("Actualizando cita: id={}", id);
+		try {
+			Appointment updatedAppointment = appointmentService.updateAppointment(id, appointment);
+			return ResponseEntity.ok(updatedAppointment);
+		} catch (AppointmentService.AppointmentServiceException e) {
+			logger.error("Error al actualizar cita: id={}, mensaje={}", id, e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of("error", e.getMessage()));
+		}
 	}
 
-	@DeleteMapping("/{id}")
+	@DeleteMapping("/appointments/{id}")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<Void> deleteAppointment(@PathVariable Long id) throws IOException {
-		appointmentService.deleteAppointment(id);
-		return ResponseEntity.noContent().build();
+	public ResponseEntity<?> deleteAppointment(@PathVariable Long id) {
+		logger.info("Eliminando cita: id={}", id);
+		try {
+			appointmentService.deleteAppointment(id);
+			return ResponseEntity.noContent().build();
+		} catch (AppointmentService.AppointmentServiceException e) {
+			logger.error("Error al eliminar cita: id={}, mensaje={}", id, e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of("error", e.getMessage()));
+		}
+	}
+
+	@PostMapping("/admin/appointments/{id}/sync-google")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<?> syncToGoogleCalendar(
+			@PathVariable Long id,
+			@RequestParam String email) throws IOException {
+		logger.info("Sincronizando cita con Google Calendar: id={}, email={}", id, email);
+		try {
+			if (email == null || email.trim().isEmpty()) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+						.body(Map.of("error", "El correo electrónico es obligatorio"));
+			}
+			Appointment appointment = appointmentService.findById(id);
+			Appointment syncedAppointment = appointmentService.syncToGoogleCalendar(appointment, email);
+			return ResponseEntity.ok(syncedAppointment);
+		} catch (AppointmentService.AppointmentServiceException e) {
+			logger.error("Error al sincronizar cita: id={}, email={}, mensaje={}", id, email, e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of("error", e.getMessage()));
+		}
+	}
+
+	@PostMapping("/admin/appointments/{id}/reminder")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<?> sendManualReminder(@PathVariable Long id) {
+		logger.info("Enviando recordatorio manual: id={}", id);
+		try {
+			appointmentService.sendManualReminder(id);
+			return ResponseEntity.ok().build();
+		} catch (AppointmentService.AppointmentServiceException e) {
+			logger.error("Error al enviar recordatorio: id={}, mensaje={}", id, e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of("error", e.getMessage()));
+		}
 	}
 }

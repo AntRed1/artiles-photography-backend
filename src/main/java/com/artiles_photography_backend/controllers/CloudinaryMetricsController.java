@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,9 +36,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 public class CloudinaryMetricsController {
 
 	private static final Logger logger = LoggerFactory.getLogger(CloudinaryMetricsController.class);
-
-	@Autowired
-	private Cloudinary cloudinary;
+	private final Cloudinary cloudinary;
 
 	// Caché para métricas con TTL de 5 minutos
 	private final Cache<String, Map<String, Object>> metricsCache = Caffeine.newBuilder()
@@ -52,6 +50,11 @@ public class CloudinaryMetricsController {
 			.maximumSize(1000)
 			.build();
 
+	public CloudinaryMetricsController(Cloudinary cloudinary) {
+		this.cloudinary = cloudinary;
+	}
+
+	@SuppressWarnings("unchecked")
 	@GetMapping
 	public ResponseEntity<Map<String, Object>> getCloudinaryMetrics() {
 		String cacheKey = "cloudinary_metrics";
@@ -73,7 +76,7 @@ public class CloudinaryMetricsController {
 			Number totalResources = (Number) resourcesResponse.get("total_count");
 			metrics.put("totalImages", totalResources != null ? totalResources.longValue() : 0L);
 
-			// Uso de almacenamiento y transformaciones (current)
+			// Uso de almacenamiento y transformaciones
 			Map<String, Object> usageResponse = cloudinary.api().usage(ObjectUtils.emptyMap());
 			Map<String, Object> objects = (Map<String, Object>) usageResponse.get("objects");
 			Map<String, Object> transformations = (Map<String, Object>) usageResponse.get("transformations");
@@ -96,11 +99,11 @@ public class CloudinaryMetricsController {
 			Map<String, Object> recentUploadsResponse = cloudinary.api().resources(recentOptions);
 			List<Map<String, Object>> recentUploads = (List<Map<String, Object>>) recentUploadsResponse
 					.get("resources");
-			metrics.put("recentUploads", recentUploads);
+			metrics.put("recentUploads", recentUploads != null ? recentUploads : Collections.emptyList());
 
-			// Historical trend data (limitado a 5 días para reducir operaciones)
+			// Historical trend data (limitado a 5 días)
 			List<Map<String, Object>> trendData = new ArrayList<>();
-			LocalDate endDate = LocalDate.now().minusDays(1); // Yesterday
+			LocalDate endDate = LocalDate.now().minusDays(1);
 			int daysToFetch = 5;
 
 			for (int i = 0; i < daysToFetch; i++) {
@@ -136,19 +139,20 @@ public class CloudinaryMetricsController {
 			return ResponseEntity.ok(metrics);
 
 		} catch (Exception e) {
-			logger.error("Error al obtener métricas de Cloudinary", e);
+			logger.error("Error al obtener métricas de Cloudinary: {}", e.getMessage(), e);
 			Map<String, Object> errorResponse = new HashMap<>();
 			String errorMessage = e.getMessage();
 			if (errorMessage != null && errorMessage.contains("Rate Limit Exceeded")) {
 				errorResponse.put("error", "Límite de tasa de Cloudinary excedido. Intenta de nuevo más tarde.");
 				return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
 			}
-			errorResponse.put("error", "Error al obtener métricas de Cloudinary: "
-					+ (errorMessage != null ? errorMessage : "Desconocido"));
+			errorResponse.put("error",
+					"Error al obtener métricas: " + (errorMessage != null ? errorMessage : "Desconocido"));
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@GetMapping("/images")
 	public ResponseEntity<Map<String, Object>> getCloudinaryImages(
 			@RequestParam(defaultValue = "1") int page,
@@ -160,8 +164,6 @@ public class CloudinaryMetricsController {
 					"max_results", size,
 					"next_cursor", page > 1 ? getNextCursor(page) : null);
 			Map<String, Object> response = cloudinary.api().resources(options);
-			logger.info("Cloudinary API response: {}", response);
-
 			List<Map<String, Object>> resources = (List<Map<String, Object>>) response.get("resources");
 			if (resources == null) {
 				logger.error("Resources list is null in Cloudinary response: {}", response);
@@ -171,16 +173,9 @@ public class CloudinaryMetricsController {
 
 			String nextCursor = (String) response.get("next_cursor");
 			Number totalCountNumber = (Number) response.get("total_count");
-			long totalCount;
-			if (totalCountNumber == null) {
-				logger.warn("total_count is missing in Cloudinary response, using resources size as fallback: {}",
-						resources.size());
-				totalCount = resources.size(); // Fallback to the number of resources returned
-			} else {
-				totalCount = totalCountNumber.longValue();
-			}
+			long totalCount = totalCountNumber != null ? totalCountNumber.longValue() : resources.size();
 
-			// Almacenar next_cursor en caché para la siguiente página
+			// Almacenar next_cursor en caché
 			if (nextCursor != null) {
 				cursorCache.put("page_" + page, nextCursor);
 				logger.info("Stored next_cursor for page {}: {}", page, nextCursor);
@@ -198,7 +193,7 @@ public class CloudinaryMetricsController {
 
 			return ResponseEntity.ok(result);
 		} catch (Exception e) {
-			logger.error("Error al obtener imágenes de Cloudinary", e);
+			logger.error("Error al obtener imágenes de Cloudinary: {}", e.getMessage(), e);
 			String errorMessage = e.getMessage();
 			if (errorMessage != null && errorMessage.contains("Rate Limit Exceeded")) {
 				return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -210,6 +205,7 @@ public class CloudinaryMetricsController {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@DeleteMapping("/{publicId}")
 	public ResponseEntity<Map<String, String>> deleteCloudinaryImage(@PathVariable String publicId) {
 		logger.info("Eliminando imagen con publicId: {}", publicId);
@@ -217,14 +213,10 @@ public class CloudinaryMetricsController {
 			Map<String, Object> options = ObjectUtils.asMap(
 					"resource_type", "image",
 					"invalidate", true);
-			Map<String, Object> apiResponse = cloudinary.api().deleteResources(Arrays.asList(publicId), options);
-			logger.info("Respuesta de Cloudinary: {}", apiResponse);
-
-			// Invalidar caché de métricas y cursores para mantener consistencia
+			cloudinary.api().deleteResources(Arrays.asList(publicId), options);
 			metricsCache.invalidate("cloudinary_metrics");
 			cursorCache.invalidateAll();
 			logger.info("Cachés invalidados tras eliminación de imagen con publicId: {}", publicId);
-
 			return ResponseEntity.ok(Map.of("message", "Imagen eliminada exitosamente."));
 		} catch (Exception e) {
 			logger.error("Error al eliminar imagen con publicId {}: {}", publicId, e.getMessage(), e);
@@ -234,7 +226,8 @@ public class CloudinaryMetricsController {
 						.body(Map.of("error", "Límite de tasa de Cloudinary excedido. Intenta de nuevo más tarde."));
 			}
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(Map.of("error", "Error al eliminar la imagen: " + e.getMessage()));
+					.body(Map.of("error",
+							"Error al eliminar la imagen: " + (errorMessage != null ? errorMessage : "Desconocido")));
 		}
 	}
 

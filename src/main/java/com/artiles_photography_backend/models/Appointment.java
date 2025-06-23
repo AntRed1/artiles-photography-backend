@@ -40,7 +40,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- *
  * @author arojas
  *         Entidad que representa una cita en el sistema.
  */
@@ -76,7 +75,7 @@ public class Appointment {
 	private String clientEmail;
 
 	@Column
-	private String googleEventId; // ID del evento en Google Calendar
+	private String googleEventId;
 
 	@Column
 	private String location;

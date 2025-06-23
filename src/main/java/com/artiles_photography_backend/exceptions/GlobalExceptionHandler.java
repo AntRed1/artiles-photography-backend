@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
+import com.artiles_photography_backend.services.AppointmentService;
+
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 
@@ -109,6 +111,15 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<Map<String, String>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
 		Map<String, String> error = new HashMap<>();
 		error.put("error", "El archivo excede el tamaño máximo permitido");
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+	}
+
+	@ExceptionHandler(AppointmentService.AppointmentServiceException.class)
+	public ResponseEntity<Map<String, String>> handleAppointmentServiceException(
+			AppointmentService.AppointmentServiceException ex) {
+		logger.error("Error en AppointmentService: {}", ex.getMessage(), ex);
+		Map<String, String> error = new HashMap<>();
+		error.put("error", ex.getMessage());
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 	}
 }

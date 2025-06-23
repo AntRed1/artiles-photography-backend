@@ -73,19 +73,25 @@ public class ReminderScheduler implements SchedulingConfigurer {
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
         taskRegistrar.addTriggerTask(
-                this::sendReminders,
+                () -> {
+                    try {
+                        sendReminders();
+                    } catch (IOException e) {
+                        logger.error("Error executing reminder task: {}", e.getMessage(), e);
+                    }
+                },
                 triggerContext -> {
                     String cron = getCronExpression();
                     if (!currentCron.equals(cron)) {
                         logger.info("Cron expression updated to: {}", cron);
                         currentCron = cron;
                     }
-                    return new CronTrigger(cron).nextExecution(triggerContext); // Eliminamos toInstant()
+                    return new CronTrigger(cron).nextExecution(triggerContext);
                 });
     }
 
     @Transactional
-    public void sendReminders() {
+    public void sendReminders() throws IOException {
         logger.info("Executing appointment reminder task...");
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime reminderTime = now.plusHours(24); // Reminders 24 hours before
@@ -102,7 +108,7 @@ public class ReminderScheduler implements SchedulingConfigurer {
                 appointment.setReminderSent(true);
                 appointmentService.updateAppointment(appointment.getId(), appointment);
                 logger.info("Reminder sent for appointment ID: {}", appointment.getId());
-            } catch (MessagingException | IOException e) {
+            } catch (MessagingException e) {
                 logger.error("Error sending reminder for appointment ID: {}: {}", appointment.getId(), e.getMessage(),
                         e);
             }

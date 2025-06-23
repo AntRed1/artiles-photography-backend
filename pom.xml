@@ -9,7 +9,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>        <!-- https://spring.io/projects/spring-boot -->
+        <version>3.5.0</version>
         <relativePath/>
     </parent>
 
@@ -52,23 +52,25 @@
 
     <!-- ⚙️ Propiedades generales del proyecto -->
     <properties>
-        <java.version>21</java.version>        <!-- Compatible con Spring Boot 3 -->
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <lombok.version>1.18.34</lombok.version>
+        <caffeine.version>3.1.8</caffeine.version>
+        <mysql.version>9.0.0</mysql.version>
+        <resilience4j.version>2.3.0</resilience4j.version>
+        <owasp-encoder.version>1.3.0</owasp-encoder.version>
     </properties>
 
     <!-- 📚 Dependencias principales -->
     <dependencies>
-
-        <!-- 🌐 Web y REST -->
+        <!-- 🌐 Web y REST con Spring MVC -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- 📊 Actuator para monitoreo -->
+        <!-- 📊 Actuator para monitoreo y métricas -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
@@ -80,75 +82,64 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- 🔐 Seguridad -->
+        <!-- 🔒 Seguridad con Spring Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- 📧 Soporte de email -->
+        <!-- 📧 Soporte para envío de emails -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
-        <!-- 💬 WebSockets -->
+        <!-- 💬 WebSockets para comunicación en tiempo real -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
-        <!-- ✅ Validaciones con anotaciones como @NotNull -->
+        <!-- ✅ Validaciones con anotaciones (@NotNull, etc.) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- ⚡ Caching con Caffeine (https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine) -->
+        <!-- 🖼️ Thymeleaf para plantillas HTML -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <!-- ⚡ Caching con Caffeine -->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
         </dependency>
 
-        <!-- ☁️ Cloudinary para gestión de imágenes (https://mvnrepository.com/artifact/com.cloudinary/cloudinary-http44) -->
+        <!-- ☁️ Cloudinary para gestión de imágenes -->
         <dependency>
             <groupId>com.cloudinary</groupId>
             <artifactId>cloudinary-http44</artifactId>
             <version>1.38.0</version>
         </dependency>
 
-        <!-- 🌐 HTTP Client Apache (https://hc.apache.org/httpcomponents-client-4.5.x/index.html) -->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.5.14</version>
-        </dependency>
-
-        <!-- 🔐 JWT tokens con Auth0 (https://github.com/auth0/java-jwt) -->
+        <!-- 🔐 JWT tokens con Auth0 -->
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
             <version>4.5.0</version>
         </dependency>
 
-        <!-- 🧼 OWASP Encoder (https://mvnrepository.com/artifact/org.owasp.encoder/encoder) -->
+        <!-- 🧼 OWASP Encoder para protección contra XSS -->
         <dependency>
             <groupId>org.owasp.encoder</groupId>
             <artifactId>encoder</artifactId>
-            <version>1.2.3</version>
+            <version>${owasp-encoder.version}</version>
         </dependency>
 
-        <!-- 🧾 Logging con SLF4J y Logback -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-        </dependency>
-
-        <!-- 🛠️ DevTools para recarga automática -->
+        <!-- 🛠️ DevTools para recarga automática en desarrollo -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -163,92 +154,115 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- 🧙‍♂️ Lombok para eliminar boilerplate -->
+        <!-- 🧙‍♂️ Lombok para reducir boilerplate -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
 
-        <!-- 🧪 Dependencias para pruebas unitarias -->
+        <!-- 🧪 Pruebas unitarias con JUnit y Spring Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- 📅 Integración con Google Calendar -->
-        <!-- 📦 Cliente base para APIs de Google -->
-        <dependency>
-            <groupId>com.google.api-client</groupId>
-            <artifactId>google-api-client</artifactId>
-            <version>1.34.1</version>
-        </dependency>
-
-        <!-- 🔐 OAuth2 con Jetty para autorización en local -->
-        <dependency>
-            <groupId>com.google.oauth-client</groupId>
-            <artifactId>google-oauth-client-jetty</artifactId>
-            <version>1.39.0</version>
-        </dependency>
-
-        <!-- 📅 Cliente específico para Google Calendar API -->
-        <dependency>
-            <groupId>com.google.apis</groupId>
-            <artifactId>google-api-services-calendar</artifactId>
-            <version>v3-rev411-1.25.0</version>
-        </dependency>
-
-        <!-- 🧠 Gson para serializar/deserializar JSON -->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.github.resilience4j</groupId>
-            <artifactId>resilience4j-spring-boot3</artifactId>
-            <version>2.2.0</version>
-        </dependency>
-
-        <!-- Mockito para pruebas -->
+        <!-- 🧪 Mockito para mocks en pruebas -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
 
+        <!-- 📅 Integración con Google Calendar -->
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client</artifactId>
+            <version>2.2.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.http-client</groupId>
+                    <artifactId>google-http-client-gson</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.auth</groupId>
+            <artifactId>google-auth-library-oauth2-http</artifactId>
+            <version>1.23.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-calendar</artifactId>
+            <version>v3-rev20220715-2.0.0</version>
+        </dependency>
+
+        <!-- 🧠 Jackson para serializar/deserializar JSON -->
+        <dependency>
+            <groupId>com.google.http-client</groupId>
+            <artifactId>google-http-client-jackson2</artifactId>
+            <version>1.44.2</version>
+        </dependency>
+
+        <!-- 🛡️ Resilience4j para tolerancia a fallos -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+
+        <!-- 🛠️ Apache Commons Text para manipulación de strings -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
             <version>1.12.0</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-thymeleaf</artifactId>
-        </dependency>
-
     </dependencies>
 
     <!-- 🏗️ Configuración de build -->
     <build>
         <plugins>
-            <!-- ☕ Plugin de compilación con soporte para anotaciones de Lombok -->
+            <!-- ☕ Compilador Maven con soporte para Java 21 y Lombok -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
                 <configuration>
+                    <release>${java.version}</release>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
 
-            <!-- 📦 Plugin de Spring Boot para empaquetar el proyecto -->
+            <!-- 🛡️ Análisis de vulnerabilidades con OWASP Dependency-Check -->
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>10.0.4</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <nvdApiKey>984ab0bd-0590-4b38-b459-a791389f4ec5</nvdApiKey>
+                    <format>HTML</format>
+                    <outputDirectory>${project.build.directory}/dependency-check-report</outputDirectory>
+                    <failBuildOnCVSS>7</failBuildOnCVSS>
+                </configuration>
+            </plugin>
+
+            <!-- 📦 Empaquetado con Spring Boot -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -260,20 +274,6 @@
                         </exclude>
                     </excludes>
                 </configuration>
-            </plugin>
-
-            <!-- 🔐 Análisis de vulnerabilidades con OWASP Dependency-Check -->
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>12.1.1</version>                <!-- https://jeremylong.github.io/DependencyCheck/ -->
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

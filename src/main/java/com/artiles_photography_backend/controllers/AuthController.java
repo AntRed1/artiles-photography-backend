@@ -176,13 +176,20 @@ public class AuthController {
     }
 
     @GetMapping("/callback")
-    public String handleGoogleCallback(@RequestParam String code, @RequestParam String email) {
+    public ResponseEntity<Map<String, String>> handleGoogleCallback(
+            @RequestParam String code, @RequestParam String email) {
         try {
             googleAuthService.handleCallback(code, email);
-            return "auth-callback";
+            logger.info("Callback procesado exitosamente para {}", email);
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "message", "Autenticación con Google completada",
+                    "email", email));
         } catch (IOException e) {
             logger.error("Error procesando callback para el email: {}", email, e);
-            return "auth-callback-error";
+            return ResponseEntity.status(500).body(Map.of(
+                    "status", "error",
+                    "message", "Error procesando la autenticación con Google"));
         }
     }
 }

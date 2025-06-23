@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -54,6 +56,13 @@ public class AnalyticsController {
 
 	public AnalyticsController(RestTemplate restTemplate) {
 		this.restTemplate = restTemplate;
+		// Validar configuración al iniciar
+		if (plausibleApiKey == null || plausibleApiKey.trim().isEmpty()) {
+			logger.error("La clave API de Plausible no está configurada en plausible.api.key");
+		}
+		if (plausibleDomain == null || plausibleDomain.trim().isEmpty()) {
+			logger.error("El dominio de Plausible no está configurado en plausible.domain");
+		}
 	}
 
 	@GetMapping("/notifications")
@@ -66,7 +75,7 @@ public class AnalyticsController {
 			return ResponseEntity.ok(notifications);
 		} catch (Exception e) {
 			logger.error("Error fetching notifications: {}", e.getMessage(), e);
-			return ResponseEntity.status(500).body(null);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
 		} finally {
 			MDC.clear();
 		}
@@ -79,7 +88,7 @@ public class AnalyticsController {
 					.body("Período inválido: " + period + ". Valores permitidos: " + VALID_PERIODS);
 		}
 		String url = plausibleApiUrl + "/stats/aggregate?site_id=" + plausibleDomain + "&period=" + period;
-		return ResponseEntity.ok(fetchFromPlausible(url, HttpMethod.GET));
+		return fetchFromPlausible(url, HttpMethod.GET);
 	}
 
 	@GetMapping("/timeseries")
@@ -89,7 +98,7 @@ public class AnalyticsController {
 					.body("Período inválido: " + period + ". Valores permitidos: " + VALID_PERIODS);
 		}
 		String url = plausibleApiUrl + "/stats/timeseries?site_id=" + plausibleDomain + "&period=" + period;
-		return ResponseEntity.ok(fetchFromPlausible(url, HttpMethod.GET));
+		return fetchFromPlausible(url, HttpMethod.GET);
 	}
 
 	@GetMapping("/recent-activity")
@@ -100,7 +109,7 @@ public class AnalyticsController {
 		}
 		String url = plausibleApiUrl + "/stats/breakdown?site_id=" + plausibleDomain + "&period=" + period
 				+ "&property=event:page";
-		return ResponseEntity.ok(fetchFromPlausible(url, HttpMethod.GET));
+		return fetchFromPlausible(url, HttpMethod.GET);
 	}
 
 	@GetMapping("/events")
@@ -111,7 +120,7 @@ public class AnalyticsController {
 		}
 		String url = plausibleApiUrl + "/stats/breakdown?site_id=" + plausibleDomain + "&period=" + period
 				+ "&property=event:name";
-		return ResponseEntity.ok(fetchFromPlausible(url, HttpMethod.GET));
+		return fetchFromPlausible(url, HttpMethod.GET);
 	}
 
 	@GetMapping("/browsers")
@@ -122,7 +131,7 @@ public class AnalyticsController {
 		}
 		String url = plausibleApiUrl + "/stats/breakdown?site_id=" + plausibleDomain + "&period=" + period
 				+ "&property=visit:browser";
-		return ResponseEntity.ok(fetchFromPlausible(url, HttpMethod.GET));
+		return fetchFromPlausible(url, HttpMethod.GET);
 	}
 
 	@GetMapping("/cities")
@@ -133,7 +142,7 @@ public class AnalyticsController {
 		}
 		String url = plausibleApiUrl + "/stats/breakdown?site_id=" + plausibleDomain + "&period=" + period
 				+ "&property=visit:city";
-		return ResponseEntity.ok(fetchFromPlausible(url, HttpMethod.GET));
+		return fetchFromPlausible(url, HttpMethod.GET);
 	}
 
 	@GetMapping("/sources")
@@ -144,7 +153,7 @@ public class AnalyticsController {
 		}
 		String url = plausibleApiUrl + "/stats/breakdown?site_id=" + plausibleDomain + "&period=" + period
 				+ "&property=visit:source";
-		return ResponseEntity.ok(fetchFromPlausible(url, HttpMethod.GET));
+		return fetchFromPlausible(url, HttpMethod.GET);
 	}
 
 	@GetMapping("/devices")
@@ -155,7 +164,7 @@ public class AnalyticsController {
 		}
 		String url = plausibleApiUrl + "/stats/breakdown?site_id=" + plausibleDomain + "&period=" + period
 				+ "&property=visit:device";
-		return ResponseEntity.ok(fetchFromPlausible(url, HttpMethod.GET));
+		return fetchFromPlausible(url, HttpMethod.GET);
 	}
 
 	@PostMapping("/track-event")
@@ -188,32 +197,55 @@ public class AnalyticsController {
 			return ResponseEntity.ok().build();
 		} catch (ResourceAccessException e) {
 			logger.error("Error de I/O al conectar con Plausible: {}", e.getMessage(), e);
-			return ResponseEntity.status(503).body("No se pudo conectar con Plausible");
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Plausible no está disponible");
 		} catch (Exception e) {
 			logger.error("Error al enviar evento: {}", e.getMessage(), e);
-			return ResponseEntity.status(500).body("Error al enviar evento");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al enviar evento");
 		} finally {
 			MDC.clear();
 		}
 	}
 
-	private Object fetchFromPlausible(String url, HttpMethod method) {
+	private ResponseEntity<?> fetchFromPlausible(String url, HttpMethod method) {
 		String requestId = UUID.randomUUID().toString();
 		MDC.put("requestId", requestId);
 		try {
+			// Validar configuración
+			if (plausibleApiKey == null || plausibleApiKey.trim().isEmpty()) {
+				logger.error("Clave API de Plausible no configurada");
+				return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+						.body("Plausible no está disponible: Clave API no configurada");
+			}
+			if (plausibleDomain == null || plausibleDomain.trim().isEmpty()) {
+				logger.error("Dominio de Plausible no configurado");
+				return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+						.body("Plausible no está disponible: Dominio no configurado");
+			}
+
 			HttpHeaders headers = new HttpHeaders();
 			headers.set("Authorization", "Bearer " + plausibleApiKey);
 			HttpEntity<String> entity = new HttpEntity<>(headers);
 			logger.debug("Haciendo solicitud a Plausible: {}", url);
-			Object response = restTemplate.exchange(url, method, entity, Object.class).getBody();
-			logger.debug("Respuesta de Plausible: {}", response);
-			return response;
+			ResponseEntity<Object> response = restTemplate.exchange(url, method, entity, Object.class);
+			logger.debug("Respuesta de Plausible: {}", response.getBody());
+			return ResponseEntity.ok(response.getBody());
+		} catch (HttpClientErrorException e) {
+			if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+				logger.warn("Error 401 Unauthorized en Plausible: {}", e.getResponseBodyAsString());
+				return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+						.body("Plausible no está disponible: Clave API o dominio inválidos");
+			}
+			logger.error("Error al obtener datos de Plausible: {}", e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+					.body("Plausible no está disponible: " + e.getMessage());
 		} catch (ResourceAccessException e) {
 			logger.error("Error de I/O al conectar con Plausible: {}", e.getMessage(), e);
-			throw new RuntimeException("No se pudo conectar con Plausible: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+					.body("Plausible no está disponible: Error de conexión");
 		} catch (Exception e) {
 			logger.error("Error inesperado al obtener datos: {}", e.getMessage(), e);
-			throw new RuntimeException("Error al obtener datos: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Error inesperado al obtener datos de Plausible");
 		} finally {
 			MDC.clear();
 		}

@@ -26,8 +26,11 @@ package com.artiles_photography_backend.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.artiles_photography_backend.models.Appointment;
@@ -42,4 +45,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 	List<Appointment> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
 
 	List<Appointment> findByReminderSentFalseAndStartTimeBefore(LocalDateTime time);
+
+	Optional<Appointment> findByGoogleEventId(String googleEventId);
+
+	@Query("SELECT a.googleEventId FROM Appointment a WHERE a.googleEventId IS NOT NULL")
+	Set<String> findAllGoogleEventIds();
 }
