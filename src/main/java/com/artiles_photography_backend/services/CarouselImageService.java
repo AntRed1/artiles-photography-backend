@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.artiles_photography_backend.dtos.CarouselImageResponse;
+import com.artiles_photography_backend.dtos.CarouselImageSelectRequest;
 import com.artiles_photography_backend.dtos.CarouselImageUpdateRequest;
 import com.artiles_photography_backend.dtos.CarouselImageUploadRequest;
 import com.artiles_photography_backend.exceptions.CloudinaryUploadException;
@@ -55,6 +56,30 @@ public class CarouselImageService {
         CarouselImage image = carouselImageRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Imagen del carrusel no encontrada con ID: " + id));
         return mapToResponse(image);
+    }
+
+    @Transactional
+    public CarouselImageResponse selectCarouselImage(CarouselImageSelectRequest request) {
+        logger.info("Seleccionando imagen existente del carrusel con URL: {}", request.getImageUrl());
+        validateUrl(request.getImageUrl());
+        CarouselImage image = new CarouselImage();
+        image.setUrl(request.getImageUrl());
+        image.setTitle(request.getTitle());
+        image.setDescription(request.getDescription());
+        image = carouselImageRepository.save(image);
+        return mapToResponse(image);
+    }
+
+    private void validateUrl(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            logger.warn("URL de imagen inválida o nula");
+            throw new IllegalArgumentException("La URL de la imagen es obligatoria");
+        }
+        // Validación básica de formato (puedes expandirla según necesidades)
+        if (!url.startsWith("http") || !url.contains("cloudinary")) {
+            logger.warn("URL no válida para Cloudinary: {}", url);
+            throw new IllegalArgumentException("La URL debe ser una URL válida de Cloudinary");
+        }
     }
 
     @Transactional

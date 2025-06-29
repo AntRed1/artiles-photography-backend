@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.artiles_photography_backend.dtos.CarouselImageResponse;
+import com.artiles_photography_backend.dtos.CarouselImageSelectRequest;
 import com.artiles_photography_backend.dtos.CarouselImageUpdateRequest;
 import com.artiles_photography_backend.dtos.CarouselImageUploadRequest;
 import com.artiles_photography_backend.services.CarouselImageService;
@@ -51,6 +53,13 @@ public class CarouselImageController {
 	public ResponseEntity<CarouselImageResponse> uploadCarouselImage(
 			@Valid @ModelAttribute CarouselImageUploadRequest request) {
 		return ResponseEntity.status(201).body(carouselImageService.createCarouselImage(request));
+	}
+
+	@PostMapping("/select")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<CarouselImageResponse> selectCarouselImage(
+			@RequestBody @Valid CarouselImageSelectRequest request) {
+		return ResponseEntity.status(201).body(carouselImageService.selectCarouselImage(request));
 	}
 
 	@PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
