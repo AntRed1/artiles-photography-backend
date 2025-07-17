@@ -1,8 +1,11 @@
 package com.artiles_photography_backend.exceptions;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -10,6 +13,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+
+import com.artiles_photography_backend.services.AppointmentService;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -20,6 +25,8 @@ import jakarta.validation.ConstraintViolationException;
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+	private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 	@ExceptionHandler(AuthenticationFailedException.class)
 	public ResponseEntity<Map<String, String>> handleAuthenticationFailedException(AuthenticationFailedException ex) {
@@ -33,6 +40,22 @@ public class GlobalExceptionHandler {
 		Map<String, String> error = new HashMap<>();
 		error.put("error", ex.getMessage());
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+	}
+
+	@ExceptionHandler(IOException.class)
+	public ResponseEntity<Map<String, String>> handleIOException(IOException ex) {
+		logger.error("Error de E/S: {}", ex.getMessage(), ex);
+		Map<String, String> error = new HashMap<>();
+		error.put("error", "Error al interactuar con Google Calendar");
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+	}
+
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<Map<String, String>> handleGeneralException(Exception ex) {
+		logger.error("Error inesperado: {}", ex.getMessage(), ex);
+		Map<String, String> error = new HashMap<>();
+		error.put("error", "Error interno del servidor");
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
 	}
 
 	@ExceptionHandler(UsernameNotFoundException.class)
@@ -91,10 +114,12 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 	}
 
-	@ExceptionHandler(Exception.class)
-	public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
+	@ExceptionHandler(AppointmentService.AppointmentServiceException.class)
+	public ResponseEntity<Map<String, String>> handleAppointmentServiceException(
+			AppointmentService.AppointmentServiceException ex) {
+		logger.error("Error en AppointmentService: {}", ex.getMessage(), ex);
 		Map<String, String> error = new HashMap<>();
-		error.put("error", "Error interno del servidor: " + ex.getMessage());
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+		error.put("error", ex.getMessage());
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 	}
 }

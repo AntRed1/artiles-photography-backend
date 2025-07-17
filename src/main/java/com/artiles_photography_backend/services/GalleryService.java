@@ -11,8 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.artiles_photography_backend.dtos.GalleryResponse;
 import com.artiles_photography_backend.dtos.GalleryImageUpdateRequest;
+import com.artiles_photography_backend.dtos.GalleryResponse;
+import com.artiles_photography_backend.dtos.GallerySelectRequest;
 import com.artiles_photography_backend.dtos.GalleryUploadRequest;
 import com.artiles_photography_backend.exceptions.CloudinaryUploadException;
 import com.artiles_photography_backend.models.Gallery;
@@ -56,6 +57,29 @@ public class GalleryService {
 		Gallery gallery = galleryRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Imagen de la galería no encontrada con ID: " + id));
 		return mapToResponse(gallery);
+	}
+
+	@Transactional
+	public GalleryResponse selectGalleryImage(GallerySelectRequest request) {
+		logger.info("Seleccionando imagen existente para la galería con URL: {}", request.getImageUrl());
+		validateUrl(request.getImageUrl());
+		Gallery gallery = new Gallery();
+		gallery.setImageUrl(request.getImageUrl());
+		gallery.setDescription(request.getDescription());
+		gallery.setUploadedAt(LocalDateTime.now());
+		gallery = galleryRepository.save(gallery);
+		return mapToResponse(gallery);
+	}
+
+	private void validateUrl(String url) {
+		if (url == null || url.trim().isEmpty()) {
+			logger.warn("URL de imagen inválida o nula");
+			throw new IllegalArgumentException("La URL de la imagen es obligatoria");
+		}
+		if (!url.startsWith("http") || !url.contains("cloudinary")) {
+			logger.warn("URL no válida para Cloudinary: {}", url);
+			throw new IllegalArgumentException("La URL debe ser una URL válida de Cloudinary");
+		}
 	}
 
 	@Transactional

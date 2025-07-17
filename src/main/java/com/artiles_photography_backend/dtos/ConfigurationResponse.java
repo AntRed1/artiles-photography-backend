@@ -14,4 +14,5 @@ public class ConfigurationResponse {
 	private String availabilityMessage;
 	private String responseTime;
 	private Boolean notificationsEnabled;
+	private String reminderCron;
 }

@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.artiles_photography_backend.dtos.PhotographyPackageRequest;
 import com.artiles_photography_backend.dtos.PhotographyPackageResponse;
+import com.artiles_photography_backend.dtos.PhotographyPackageSelectRequest;
 import com.artiles_photography_backend.dtos.PhotographyPackageUploadRequest;
 import com.artiles_photography_backend.exceptions.CloudinaryUploadException;
 import com.artiles_photography_backend.models.PhotographyPackage;
@@ -48,6 +49,35 @@ public class PhotographyPackageService {
         return repository.findAll().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public PhotographyPackageResponse selectPhotographyPackageImage(PhotographyPackageSelectRequest request) {
+        logger.info("Seleccionando imagen existente para paquete con ID: {} y URL: {}", request.getId(),
+                request.getImageUrl());
+        validateUrl(request.getImageUrl());
+        PhotographyPackage pkg = repository.findById(request.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Paquete no encontrado con ID: " + request.getId()));
+        pkg.setImageUrl(request.getImageUrl());
+        pkg.setTitle(request.getTitle());
+        pkg.setDescription(request.getDescription());
+        pkg.setPrice(request.getPrice());
+        pkg.setIsActive(request.getIsActive());
+        pkg.setShowPrice(request.getShowPrice());
+        pkg.setFeatures(request.getFeatures());
+        pkg = repository.save(pkg);
+        return mapToResponse(pkg);
+    }
+
+    private void validateUrl(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            logger.warn("URL de imagen inválida o nula");
+            throw new IllegalArgumentException("La URL de la imagen es obligatoria");
+        }
+        if (!url.startsWith("http") || !url.contains("cloudinary")) {
+            logger.warn("URL no válida para Cloudinary: {}", url);
+            throw new IllegalArgumentException("La URL debe ser una URL válida de Cloudinary");
+        }
     }
 
     public PhotographyPackageResponse getById(Long id) {

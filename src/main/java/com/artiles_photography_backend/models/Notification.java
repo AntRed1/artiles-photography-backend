@@ -1,5 +1,7 @@
 package com.artiles_photography_backend.models;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -14,36 +16,31 @@ import lombok.NoArgsConstructor;
  * @author arojas
  */
 @Entity
-@Table(name = "configuration")
+@Table(name = "notifications")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Configuration {
+public class Notification {
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@Column(nullable = false)
-	private String logoUrl;
+	private String icon;
+
+	@Column(nullable = false)
+	private String text;
+
+	@Column(nullable = false)
+	private String time;
+
+	@Column(nullable = false)
+	private String color;
 
 	@Column
-	private String logoPublicId;
+	private String link;
 
-	@Column
-	private String logoAltText;
-
-	@Column
-	private String heroBackgroundImage;
-
-	@Column
-	private String availabilityMessage;
-
-	@Column
-	private String responseTime;
-
-	@Column
-	private Boolean notificationsEnabled;
-
-	@Column
-	private String reminderCron;
+	@Column(name = "created_at", nullable = false)
+	private LocalDateTime createdAt;
 }

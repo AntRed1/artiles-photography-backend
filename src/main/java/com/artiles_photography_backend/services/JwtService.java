@@ -1,5 +1,7 @@
 package com.artiles_photography_backend.services;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -17,6 +19,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
 import jakarta.annotation.PostConstruct;
@@ -80,22 +83,56 @@ public class JwtService {
 			logger.debug("Email extraído: {}, Issuer: {}, ExpiresAt: {}", email, decodedJWT.getIssuer(),
 					decodedJWT.getExpiresAt());
 			return email;
+		} catch (TokenExpiredException e) {
+			logger.warn("Token expirado: {}", e.getMessage());
+			return null; // Devolvemos null en lugar de lanzar excepción
 		} catch (JWTVerificationException e) {
 			logger.warn("Error al extraer email del token: {}", e.getMessage(), e);
 			throw new JwtValidationException("Token JWT inválido: " + e.getMessage(), e);
 		}
 	}
 
+	public LocalDateTime getExpirationFromToken(String token) {
+		try {
+			logger.debug("Extrayendo fecha de expiración del token");
+			DecodedJWT decodedJWT = JWT.require(algorithm)
+					.withIssuer(issuer)
+					.build()
+					.verify(token);
+			Date expirationDate = decodedJWT.getExpiresAt();
+			if (expirationDate == null) {
+				logger.warn("No se encontró fecha de expiración en el token");
+				return null;
+			}
+			LocalDateTime expiryDateTime = expirationDate.toInstant()
+					.atZone(ZoneId.systemDefault())
+					.toLocalDateTime();
+			logger.debug("Fecha de expiración extraída: {}", expiryDateTime);
+			return expiryDateTime;
+		} catch (TokenExpiredException e) {
+			logger.warn("Token expirado al extraer fecha de expiración: {}", e.getMessage());
+			return null; // Devolvemos null en lugar de lanzar excepción
+		} catch (JWTVerificationException e) {
+			logger.warn("Error al extraer la fecha de expiración del token: {}", e.getMessage(), e);
+			return null;
+		}
+	}
+
 	public boolean validateToken(String token, UserDetails userDetails) {
 		try {
 			String email = getEmailFromToken(token);
+			if (email == null) {
+				logger.warn("No se pudo extraer email del token (posiblemente expirado)");
+				return false;
+			}
 			boolean isExpired = isTokenExpired(token);
 			boolean isValid = email.equals(userDetails.getUsername()) && !isExpired;
 			logger.debug("Validación de token para {}: isValid={}, emailMatch={}, isExpired={}, authorities={}",
 					email, isValid, email.equals(userDetails.getUsername()), isExpired, userDetails.getAuthorities());
 			if (!isValid) {
 				if (!email.equals(userDetails.getUsername())) {
-					logger.warn("El email del token ({}) no coincide con el usuario ({})", email, userDetails.getUsername());
+					logger.warn("El email del token ({}) no coincide con el usuario ({})", email,
+							userDetails.getUsername());
 				}
 				if (isExpired) {
 					logger.warn("Token expirado para usuario: {}", email);
@@ -118,6 +155,9 @@ public class JwtService {
 			boolean expired = expirationDate.before(new Date());
 			logger.debug("Verificación de expiración: expiresAt={}, expired={}", expirationDate, expired);
 			return expired;
+		} catch (TokenExpiredException e) {
+			logger.warn("Token expirado: {}", e.getMessage());
+			return true;
 		} catch (JWTVerificationException e) {
 			logger.warn("Error al verificar expiración del token: {}", e.getMessage(), e);
 			return true;

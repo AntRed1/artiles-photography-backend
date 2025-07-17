@@ -1,0 +1,22 @@
+<!-- auth-callback.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Autenticación Completada</title>
+    <script>
+      window.onload = function () {
+        window.opener.postMessage(
+          {
+            type: "GOOGLE_AUTH_SUCCESS",
+            email: new URLSearchParams(window.location.search).get("email"),
+          },
+          window.location.origin
+        );
+        window.close();
+      };
+    </script>
+  </head>
+  <body>
+    <p>Autenticación completada. Puedes cerrar esta ventana.</p>
+  </body>
+</html>

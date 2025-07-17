@@ -1,0 +1,23 @@
+<!-- auth-callback-error.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Error en Autenticación</title>
+    <script>
+      window.onload = function () {
+        window.opener.postMessage(
+          {
+            type: "GOOGLE_AUTH_ERROR",
+            message: "Error en la autenticación con Google",
+            email: new URLSearchParams(window.location.search).get("email"),
+          },
+          window.location.origin
+        );
+        window.close();
+      };
+    </script>
+  </head>
+  <body>
+    <p>Error en la autenticación. Puedes cerrar esta ventana.</p>
+  </body>
+</html>

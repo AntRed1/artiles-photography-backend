@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.artiles_photography_backend.dtos.PhotographyPackageResponse;
+import com.artiles_photography_backend.dtos.PhotographyPackageSelectRequest;
 import com.artiles_photography_backend.dtos.PhotographyPackageUploadRequest;
 import com.artiles_photography_backend.services.PhotographyPackageService;
 
@@ -48,6 +50,13 @@ public class PhotographyPackageController {
 	@GetMapping("/active")
 	public ResponseEntity<List<PhotographyPackageResponse>> getActivePhotographyPackages() {
 		return ResponseEntity.ok(service.getActivePhotographyPackages());
+	}
+
+	@PostMapping("/admin/packages/select")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<PhotographyPackageResponse> selectPhotographyPackageImage(
+			@RequestBody @Valid PhotographyPackageSelectRequest request) {
+		return ResponseEntity.status(201).body(service.selectPhotographyPackageImage(request));
 	}
 
 	@PostMapping(value = "/admin/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

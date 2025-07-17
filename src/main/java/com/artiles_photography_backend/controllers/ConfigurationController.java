@@ -22,14 +22,16 @@ import com.artiles_photography_backend.dtos.ConfigurationRequest;
 import com.artiles_photography_backend.dtos.ConfigurationResponse;
 import com.artiles_photography_backend.dtos.ConfigurationUploadRequest;
 import com.artiles_photography_backend.services.ConfigurationService;
+import com.artiles_photography_backend.services.ReminderScheduler;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 
 /**
+ * REST controller for managing configuration-related requests.
+ *
  * @author arojas
- *         Controlador REST para manejar peticiones relacionadas con
- *         Configuration.
  */
 @RestController
 @RequestMapping("/api")
@@ -38,9 +40,11 @@ public class ConfigurationController {
 	private static final Logger logger = LoggerFactory.getLogger(ConfigurationController.class);
 
 	private final ConfigurationService configurationService;
+	private final ReminderScheduler reminderScheduler;
 
-	public ConfigurationController(ConfigurationService configurationService) {
+	public ConfigurationController(ConfigurationService configurationService, ReminderScheduler reminderScheduler) {
 		this.configurationService = configurationService;
+		this.reminderScheduler = reminderScheduler;
 	}
 
 	@GetMapping("/config")
@@ -106,7 +110,8 @@ public class ConfigurationController {
 			request.setHeroBackgroundImage(heroBackgroundImage);
 			request.setAvailabilityMessage(availabilityMessage);
 			request.setResponseTime(responseTime);
-			request.setNotificationsEnabled(notificationsEnabled != null ? Boolean.parseBoolean(notificationsEnabled) : null);
+			request.setNotificationsEnabled(
+					notificationsEnabled != null ? Boolean.parseBoolean(notificationsEnabled) : null);
 
 			// Delegar al servicio
 			ConfigurationResponse response = configurationService.updateConfiguration(id, request);
@@ -126,6 +131,25 @@ public class ConfigurationController {
 			@PathVariable Long id, @Valid @RequestBody ConfigurationRequest request) {
 		logger.info("Actualizando configuración con ID: {} sin archivo", id);
 		return ResponseEntity.ok(configurationService.updateConfiguration(id, request));
+	}
+
+	@PutMapping(value = "/admin/config/reminder-cron", consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<String> updateReminderCron(
+			@RequestBody @Pattern(regexp = "^((\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+)(,(\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+))*)?\\s+"
+					+ "((\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+)(,(\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+))*)?\\s+"
+					+ "((\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+)(,(\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+))*)?\\s+"
+					+ "((\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+)(,(\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+))*)?\\s+"
+					+ "((\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+)(,(\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+))*)?\\s+"
+					+ "((\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+)(,(\\*|\\d+(\\s+\\d+)*|\\d+\\/\\d+|\\d+-\\d+))*)?$", message = "Invalid cron expression") String cron) {
+		logger.info("Actualizando reminder cron a: {}", cron);
+		try {
+			reminderScheduler.updateCron(cron);
+			return ResponseEntity.ok("Reminder cron actualizado exitosamente.");
+		} catch (IllegalArgumentException e) {
+			logger.error("Expresión cron inválida: {}", cron, e);
+			return ResponseEntity.badRequest().body("Expresión cron inválida: " + e.getMessage());
+		}
 	}
 
 	@DeleteMapping("/admin/config/{id}")

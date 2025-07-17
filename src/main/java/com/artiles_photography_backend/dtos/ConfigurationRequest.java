@@ -26,4 +26,6 @@ public class ConfigurationRequest {
     private String responseTime;
 
     private Boolean notificationsEnabled;
+
+    private String reminderCron;
 }

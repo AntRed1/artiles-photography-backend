@@ -11,11 +11,13 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.artiles_photography_backend.dtos.GalleryResponse;
 import com.artiles_photography_backend.dtos.GalleryImageUpdateRequest;
+import com.artiles_photography_backend.dtos.GalleryResponse;
+import com.artiles_photography_backend.dtos.GallerySelectRequest;
 import com.artiles_photography_backend.dtos.GalleryUploadRequest;
 import com.artiles_photography_backend.services.GalleryService;
 
@@ -44,6 +46,13 @@ public class GalleryController {
 	@GetMapping("/{id}")
 	public ResponseEntity<GalleryResponse> getGalleryImageById(@PathVariable Long id) {
 		return ResponseEntity.ok(galleryService.getGalleryImageById(id));
+	}
+
+	@PostMapping("/admin/gallery/select")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<GalleryResponse> selectGalleryImage(
+			@RequestBody @Valid GallerySelectRequest request) {
+		return ResponseEntity.status(201).body(galleryService.selectGalleryImage(request));
 	}
 
 	@PostMapping(value = "/admin/gallery/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
