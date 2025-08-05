@@ -1,5 +1,7 @@
 package com.artiles_photography_backend.security;
 
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,8 +22,6 @@ import com.artiles_photography_backend.repository.JwtBlacklistRepository;
 import com.artiles_photography_backend.services.JwtService;
 
 import jakarta.servlet.http.HttpServletResponse;
-
-import java.util.Arrays;
 
 /**
  * @author arojas
@@ -130,7 +130,7 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "https://artilesphotography.com",
-				"http://localhost:3000", "http://localhost:5173", "http://localhost/", "http://artiles.local:8080",
+				"http://localhost:3000", "18.227.79.145", "http://localhost/", "http://artiles.local:8080",
 				"http://artiles.local:3000", "http://3.144.121.87"));
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));

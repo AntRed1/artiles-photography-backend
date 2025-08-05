@@ -2,6 +2,8 @@ package com.artiles_photography_backend.controllers;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,6 +34,7 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/gallery")
 public class GalleryController {
 
+	private static final Logger logger = LoggerFactory.getLogger(GalleryController.class);
 	private final GalleryService galleryService;
 
 	public GalleryController(GalleryService galleryService) {
@@ -48,28 +51,45 @@ public class GalleryController {
 		return ResponseEntity.ok(galleryService.getGalleryImageById(id));
 	}
 
-	@PostMapping("/admin/gallery/select")
+	@PostMapping("/cloudinary")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<GalleryResponse> selectGalleryImage(
+	public ResponseEntity<GalleryResponse> createGalleryImageWithCloudinary(
 			@RequestBody @Valid GallerySelectRequest request) {
-		return ResponseEntity.status(201).body(galleryService.selectGalleryImage(request));
+		logger.info("Creating gallery image with Cloudinary publicId: {}", request.getPublicId());
+		return ResponseEntity.status(201).body(galleryService.createGalleryImageWithCloudinary(request));
 	}
 
-	@PostMapping(value = "/admin/gallery/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<GalleryResponse> uploadGalleryImage(
 			@Valid @ModelAttribute GalleryUploadRequest request) {
+		logger.info("Uploading gallery image - File: {}",
+				request.getFile() != null ? request.getFile().getOriginalFilename() : "none");
 		return ResponseEntity.status(201).body(galleryService.createGalleryImage(request));
 	}
 
-	@PutMapping(value = "/admin/gallery/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	// Método para actualizar con multipart/form-data (con archivos)
+	@PutMapping(value = "/{id}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<GalleryResponse> updateGalleryImage(
+	public ResponseEntity<GalleryResponse> updateGalleryImageWithFile(
 			@PathVariable Long id, @Valid @ModelAttribute GalleryImageUpdateRequest request) {
+		logger.info("Update gallery image with file - ID: {}, File: {}, PublicId: {}",
+				id, request.getFile() != null ? request.getFile().getOriginalFilename() : "none",
+				request.getPublicId());
 		return ResponseEntity.ok(galleryService.updateGalleryImage(id, request));
 	}
 
-	@DeleteMapping("/admin/gallery/{id}")
+	// Método para actualizar solo metadatos con JSON (sin archivos)
+	@PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<GalleryResponse> updateGalleryImageMetadata(
+			@PathVariable Long id, @RequestBody @Valid GalleryImageUpdateRequest request) {
+		logger.info("Update gallery image metadata - ID: {}, PublicId: {}",
+				id, request.getPublicId());
+		return ResponseEntity.ok(galleryService.updateGalleryImage(id, request));
+	}
+
+	@DeleteMapping("/{id}")
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Void> deleteGalleryImage(@PathVariable Long id) {
 		galleryService.deleteGalleryImage(id);

@@ -20,6 +20,9 @@ public class PhotographyPackageUploadRequest {
 
 	private MultipartFile file;
 
+	// Nuevo campo para manejar selección de imagen desde Cloudinary
+	private String publicId;
+
 	@NotBlank(message = "El título es obligatorio")
 	@Size(max = 100, message = "El título no puede exceder los 100 caracteres")
 	private String title;

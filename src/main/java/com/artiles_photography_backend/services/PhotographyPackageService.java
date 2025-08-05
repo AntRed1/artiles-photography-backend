@@ -134,6 +134,43 @@ public class PhotographyPackageService {
     }
 
     @Transactional
+    public PhotographyPackageResponse createPhotographyPackageWithCloudinary(PhotographyPackageSelectRequest request) {
+        logger.info("Creando nuevo paquete fotográfico con imagen de Cloudinary, publicId: {}", request.getPublicId());
+
+        if (request.getPublicId() == null || request.getPublicId().trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "El publicId es obligatorio para crear un paquete con imagen de Cloudinary");
+        }
+
+        try {
+            // Obtener la URL de la imagen desde Cloudinary usando el publicId
+            Map resourceResult = cloudinary.api().resource(request.getPublicId(), ObjectUtils.emptyMap());
+            String url = (String) resourceResult.get("secure_url");
+
+            if (url == null || url.trim().isEmpty()) {
+                throw new IllegalArgumentException(
+                        "No se pudo obtener la URL para el publicId: " + request.getPublicId());
+            }
+
+            PhotographyPackage pkg = new PhotographyPackage();
+            pkg.setImageUrl(url);
+            pkg.setTitle(request.getTitle());
+            pkg.setDescription(request.getDescription());
+            pkg.setPrice(request.getPrice());
+            pkg.setIsActive(request.getIsActive());
+            pkg.setShowPrice(request.getShowPrice());
+            pkg.setFeatures(request.getFeatures());
+            pkg = repository.save(pkg);
+
+            logger.info("Paquete creado con imagen de Cloudinary: {} -> {}", request.getPublicId(), url);
+            return mapToResponse(pkg);
+        } catch (Exception e) {
+            logger.error("Error al crear paquete con imagen de Cloudinary: {}", e.getMessage());
+            throw new CloudinaryUploadException("Error al obtener la imagen de Cloudinary", e);
+        }
+    }
+
+    @Transactional
     public PhotographyPackageResponse updatePhotographyPackage(Long id, PhotographyPackageUploadRequest request) {
         logger.info("Actualizando paquete fotográfico con ID: {}", id);
         PhotographyPackage pkg = repository.findById(id)
@@ -147,32 +184,72 @@ public class PhotographyPackageService {
         pkg.setShowPrice(request.getShowPrice());
         pkg.setFeatures(request.getFeatures());
 
-        // Manejar la imagen si se proporciona
+        // Manejar la imagen
         MultipartFile file = request.getFile();
+        String publicId = request.getPublicId();
+
+        logger.info("Parámetros de imagen - File presente: {}, PublicId: {}",
+                file != null && !file.isEmpty(), publicId);
+
+        // Caso 1: Se proporciona un archivo para subir
         if (file != null && !file.isEmpty()) {
+            logger.info("Actualizando con archivo local");
             validateFile(file, false);
             try {
                 // Eliminar la imagen anterior en Cloudinary (si existe)
-                if (pkg.getImageUrl() != null) {
-                    String publicId = extractPublicId(pkg.getImageUrl());
-                    cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-                    logger.info("Imagen anterior eliminada de Cloudinary con public_id: {}", publicId);
+                if (pkg.getImageUrl() != null && pkg.getImageUrl().contains("cloudinary")) {
+                    String oldPublicId = extractPublicId(pkg.getImageUrl());
+                    cloudinary.uploader().destroy(oldPublicId, ObjectUtils.emptyMap());
+                    logger.info("Imagen anterior eliminada de Cloudinary con public_id: {}", oldPublicId);
                 }
 
                 // Subir la nueva imagen
                 Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
                         ObjectUtils.asMap("folder", CLOUDINARY_FOLDER));
                 String url = (String) uploadResult.get("secure_url");
-                String publicId = (String) uploadResult.get("public_id");
+                String newPublicId = (String) uploadResult.get("public_id");
                 pkg.setImageUrl(url);
-                logger.info("Nueva imagen subida a Cloudinary con public_id: {}", publicId);
+                logger.info("Nueva imagen subida a Cloudinary con public_id: {}", newPublicId);
             } catch (IOException e) {
                 logger.error("Error al subir imagen a Cloudinary: {}", e.getMessage());
                 throw new CloudinaryUploadException("Error al subir la imagen a Cloudinary", e);
             }
         }
+        // Caso 2: Se proporciona un publicId de Cloudinary
+        else if (publicId != null && !publicId.trim().isEmpty()) {
+            logger.info("Actualizando con imagen de Cloudinary, publicId: {}", publicId);
+            try {
+                // Eliminar la imagen anterior si es diferente
+                if (pkg.getImageUrl() != null && pkg.getImageUrl().contains("cloudinary")) {
+                    String oldPublicId = extractPublicId(pkg.getImageUrl());
+                    if (!oldPublicId.equals(publicId)) {
+                        cloudinary.uploader().destroy(oldPublicId, ObjectUtils.emptyMap());
+                        logger.info("Imagen anterior eliminada de Cloudinary con public_id: {}", oldPublicId);
+                    }
+                }
+
+                // Obtener la URL de la imagen desde Cloudinary usando el publicId
+                Map resourceResult = cloudinary.api().resource(publicId, ObjectUtils.emptyMap());
+                String url = (String) resourceResult.get("secure_url");
+
+                if (url == null || url.trim().isEmpty()) {
+                    throw new IllegalArgumentException("No se pudo obtener la URL para el publicId: " + publicId);
+                }
+
+                pkg.setImageUrl(url);
+                logger.info("Imagen actualizada desde Cloudinary: {} -> {}", publicId, url);
+            } catch (Exception e) {
+                logger.error("Error al obtener imagen de Cloudinary con publicId {}: {}", publicId, e.getMessage());
+                throw new CloudinaryUploadException("Error al obtener la imagen de Cloudinary", e);
+            }
+        }
+        // Caso 3: No se proporciona ni archivo ni publicId (mantener imagen actual)
+        else {
+            logger.info("No se proporciona nueva imagen, manteniendo la actual");
+        }
 
         pkg = repository.save(pkg);
+        logger.info("Paquete fotográfico actualizado exitosamente con ID: {}", id);
         return mapToResponse(pkg);
     }
 

@@ -17,6 +17,9 @@ public class GalleryUploadRequest {
     @NotNull(message = "El archivo de imagen es obligatorio")
     private MultipartFile file;
 
+    // Para selección de imagen desde Cloudinary
+    private String publicId;
+
     @NotBlank(message = "La descripción es obligatoria")
     @Size(max = 500, message = "La descripción no puede exceder los 500 caracteres")
     private String description;

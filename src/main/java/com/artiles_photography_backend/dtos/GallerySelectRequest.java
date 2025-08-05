@@ -38,6 +38,9 @@ public class GallerySelectRequest {
   @NotBlank(message = "La URL de la imagen es obligatoria")
   private String imageUrl;
 
+  @NotBlank(message = "El publicId es obligatorio")
+  private String publicId;
+
   @Size(max = 500, message = "La descripción no debe exceder 500 caracteres")
   private String description;
 

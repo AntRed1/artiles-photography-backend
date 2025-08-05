@@ -2,6 +2,8 @@ package com.artiles_photography_backend.controllers;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,7 +22,9 @@ import com.artiles_photography_backend.dtos.CarouselImageSelectRequest;
 import com.artiles_photography_backend.dtos.CarouselImageUpdateRequest;
 import com.artiles_photography_backend.dtos.CarouselImageUploadRequest;
 import com.artiles_photography_backend.services.CarouselImageService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 /**
@@ -32,6 +36,7 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/carousel")
 public class CarouselImageController {
 
+	private static final Logger logger = LoggerFactory.getLogger(CarouselImageController.class);
 	private final CarouselImageService carouselImageService;
 
 	public CarouselImageController(CarouselImageService carouselImageService) {
@@ -62,11 +67,49 @@ public class CarouselImageController {
 		return ResponseEntity.status(201).body(carouselImageService.selectCarouselImage(request));
 	}
 
-	@PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	// Método para actualizar con multipart/form-data (con archivos)
+	@PutMapping(value = "/{id}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<CarouselImageResponse> updateCarouselImageWithFile(
+			@PathVariable Long id, @Valid @ModelAttribute CarouselImageUpdateRequest request) {
+		logger.info("Update carousel image with file - ID: {}, File: {}",
+				id, request.getFile() != null ? request.getFile().getOriginalFilename() : "none");
+		return ResponseEntity.ok(carouselImageService.updateCarouselImage(id, request));
+	}
+
+	// Método para actualizar solo metadatos con JSON (sin archivos)
+	// Alternativa: Un solo endpoint que detecta el Content-Type
+	@PutMapping("/{id}")
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<CarouselImageResponse> updateCarouselImage(
-			@PathVariable Long id, @Valid @ModelAttribute CarouselImageUpdateRequest request) {
-		return ResponseEntity.ok(carouselImageService.updateCarouselImage(id, request));
+			@PathVariable Long id,
+			HttpServletRequest request) {
+
+		String contentType = request.getContentType();
+
+		if (contentType != null && contentType.startsWith("multipart/form-data")) {
+			// Procesar como multipart
+			try {
+				CarouselImageUpdateRequest updateRequest = new CarouselImageUpdateRequest();
+				// Extraer manualmente los parámetros del request multipart
+				// ... lógica para extraer file, title, description, etc.
+				return ResponseEntity.ok(carouselImageService.updateCarouselImage(id, updateRequest));
+			} catch (Exception e) {
+				throw new RuntimeException("Error processing multipart request", e);
+			}
+		} else if (contentType != null && contentType.startsWith("application/json")) {
+			// Procesar como JSON
+			try {
+				ObjectMapper mapper = new ObjectMapper();
+				CarouselImageUpdateRequest updateRequest = mapper.readValue(
+						request.getInputStream(), CarouselImageUpdateRequest.class);
+				return ResponseEntity.ok(carouselImageService.updateCarouselImage(id, updateRequest));
+			} catch (Exception e) {
+				throw new RuntimeException("Error processing JSON request", e);
+			}
+		} else {
+			throw new IllegalArgumentException("Unsupported content type: " + contentType);
+		}
 	}
 
 	@DeleteMapping("/{id}")
