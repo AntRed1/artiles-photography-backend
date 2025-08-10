@@ -97,6 +97,8 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/auth/google").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/calendar/callback").permitAll()
 						.requestMatchers("/api/auth/**", "/api/calendar/callback").permitAll()
+						// Permitir acceso público a Swagger UI y OpenAPI docs
+						.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/contact-info").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/services").permitAll()
