@@ -59,6 +59,31 @@ public class GalleryService {
 		return mapToResponse(gallery);
 	}
 
+	/**
+	 * Crea una imagen de galería usando Cloudinary basada en una selección
+	 * existente
+	 */
+	@Transactional
+	public GalleryResponse createGalleryImageWithCloudinary(GallerySelectRequest request) {
+		logger.info("Creando imagen de galería desde Cloudinary con URL: {}", request.getImageUrl());
+
+		// Validar que la URL sea válida
+		validateUrl(request.getImageUrl());
+
+		// Crear nueva entidad Gallery
+		Gallery gallery = new Gallery();
+		gallery.setImageUrl(request.getImageUrl());
+		gallery.setDescription(request.getDescription());
+		gallery.setUploadedAt(LocalDateTime.now());
+
+		// Guardar en base de datos
+		gallery = galleryRepository.save(gallery);
+
+		logger.info("Imagen de galería creada exitosamente con ID: {}", gallery.getId());
+
+		return mapToResponse(gallery);
+	}
+
 	@Transactional
 	public GalleryResponse selectGalleryImage(GallerySelectRequest request) {
 		logger.info("Seleccionando imagen existente para la galería con URL: {}", request.getImageUrl());

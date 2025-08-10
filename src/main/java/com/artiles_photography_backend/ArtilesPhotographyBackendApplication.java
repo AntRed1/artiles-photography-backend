@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class ArtilesPhotographyBackendApplication {
 
 	public static void main(String[] args) {
+
 		SpringApplication.run(ArtilesPhotographyBackendApplication.class, args);
 	}
 

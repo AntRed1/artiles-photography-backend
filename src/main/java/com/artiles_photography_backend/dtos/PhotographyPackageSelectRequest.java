@@ -24,6 +24,7 @@
 
 package com.artiles_photography_backend.dtos;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
@@ -56,7 +57,7 @@ public class PhotographyPackageSelectRequest {
 
   @NotNull(message = "El precio es obligatorio")
   @Positive(message = "El precio debe ser mayor que 0")
-  private Double price;
+  private BigDecimal price; // CAMBIADO DE Double A BigDecimal
 
   @NotNull(message = "El estado activo es obligatorio")
   private Boolean isActive;
@@ -68,4 +69,15 @@ public class PhotographyPackageSelectRequest {
   @Size(min = 1, max = 20, message = "Debe haber entre 1 y 20 características")
   private List<@NotBlank(message = "Cada característica debe tener contenido") @Size(max = 200, message = "Cada característica no puede exceder los 200 caracteres") String> features;
 
+  // MÉTODO AGREGADO PARA ARREGLAR ERROR DE COMPILACIÓN
+  @NotBlank(message = "La URL de imagen es obligatoria")
+  private String imageUrl;
+
+  public String getImageUrl() {
+    return imageUrl;
+  }
+
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
+  }
 }

@@ -1,5 +1,6 @@
 package com.artiles_photography_backend.models;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.persistence.CollectionTable;
@@ -41,7 +42,7 @@ public class PhotographyPackage {
     private String description;
 
     @Column(nullable = false)
-    private Double price;
+    private BigDecimal price; // CAMBIADO DE Double A BigDecimal
 
     @Column(nullable = false)
     private Boolean isActive;
@@ -57,4 +58,16 @@ public class PhotographyPackage {
     @Column(name = "feature")
     private List<String> features;
 
+    // MÉTODOS AGREGADOS PARA ARREGLAR ERRORES DE COMPILACIÓN
+    public String getName() {
+        return this.title; // Usando title como nombre
+    }
+
+    public BigDecimal getPrice() {
+        return this.price;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
 }

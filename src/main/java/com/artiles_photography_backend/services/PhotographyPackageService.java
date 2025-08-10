@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import java.math.BigDecimal;
 
 import com.artiles_photography_backend.dtos.PhotographyPackageRequest;
 import com.artiles_photography_backend.dtos.PhotographyPackageResponse;
@@ -109,7 +110,7 @@ public class PhotographyPackageService {
             pkg.setImageUrl(url);
             pkg.setTitle(request.getTitle());
             pkg.setDescription(request.getDescription());
-            pkg.setPrice(request.getPrice());
+            pkg.setPrice(BigDecimal.valueOf(request.getPrice()));
             pkg.setIsActive(request.getIsActive());
             pkg.setShowPrice(request.getShowPrice());
             pkg.setFeatures(request.getFeatures());
@@ -179,7 +180,7 @@ public class PhotographyPackageService {
         // Actualizar campos básicos
         pkg.setTitle(request.getTitle());
         pkg.setDescription(request.getDescription());
-        pkg.setPrice(request.getPrice());
+        pkg.setPrice(BigDecimal.valueOf(request.getPrice()));
         pkg.setIsActive(request.getIsActive());
         pkg.setShowPrice(request.getShowPrice());
         pkg.setFeatures(request.getFeatures());
@@ -300,7 +301,7 @@ public class PhotographyPackageService {
         pkg.setImageUrl(request.getImageUrl());
         pkg.setTitle(request.getTitle());
         pkg.setDescription(request.getDescription());
-        pkg.setPrice(request.getPrice());
+        pkg.setPrice(BigDecimal.valueOf(request.getPrice()));
         pkg.setIsActive(request.getIsActive());
         pkg.setShowPrice(request.getShowPrice());
         pkg.setFeatures(request.getFeatures());
@@ -312,7 +313,7 @@ public class PhotographyPackageService {
         response.setImageUrl(pkg.getImageUrl());
         response.setTitle(pkg.getTitle());
         response.setDescription(pkg.getDescription());
-        response.setPrice(pkg.getPrice());
+        response.setPrice(pkg.getPrice().doubleValue());
         response.setIsActive(pkg.getIsActive());
         response.setShowPrice(pkg.getShowPrice());
         response.setFeatures(pkg.getFeatures());
