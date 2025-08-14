@@ -70,18 +70,6 @@ public class CarouselImageService {
         return mapToResponse(image);
     }
 
-    private void validateUrl(String url) {
-        if (url == null || url.trim().isEmpty()) {
-            logger.warn("URL de imagen inválida o nula");
-            throw new IllegalArgumentException("La URL de la imagen es obligatoria");
-        }
-        // Validación básica de formato (puedes expandirla según necesidades)
-        if (!url.startsWith("http") || !url.contains("cloudinary")) {
-            logger.warn("URL no válida para Cloudinary: {}", url);
-            throw new IllegalArgumentException("La URL debe ser una URL válida de Cloudinary");
-        }
-    }
-
     @Transactional
     public CarouselImageResponse createCarouselImage(CarouselImageUploadRequest request) {
         logger.info("Subiendo nueva imagen del carrusel con título: {}", request.getTitle());
@@ -93,6 +81,7 @@ public class CarouselImageService {
             String publicId = (String) uploadResult.get("public_id");
             CarouselImage image = new CarouselImage();
             image.setUrl(url);
+            image.setPublicId(publicId); // Guardar publicId
             image.setTitle(request.getTitle());
             image.setDescription(request.getDescription());
             image = carouselImageRepository.save(image);
@@ -120,14 +109,26 @@ public class CarouselImageService {
                 Map uploadResult = cloudinary.uploader().upload(request.getFile().getBytes(),
                         ObjectUtils.asMap("folder", CLOUDINARY_FOLDER));
                 image.setUrl((String) uploadResult.get("secure_url"));
+                image.setPublicId((String) uploadResult.get("public_id"));
                 logger.info("Nueva imagen subida a Cloudinary con public_id: {}", uploadResult.get("public_id"));
             } catch (IOException e) {
                 logger.error("Error al subir nueva imagen a Cloudinary: {}", e.getMessage());
                 throw new CloudinaryUploadException("Error al subir la nueva imagen a Cloudinary", e);
             }
+        } else {
+            // Actualizar metadatos, incluyendo imageUrl y publicId si están presentes
+            if (request.getImageUrl() != null) {
+                validateUrl(request.getImageUrl());
+                image.setUrl(request.getImageUrl());
+                logger.info("Actualizando imageUrl a: {}", request.getImageUrl());
+            }
+            if (request.getPublicId() != null) {
+                image.setPublicId(request.getPublicId());
+                logger.info("Actualizando publicId a: {}", request.getPublicId());
+            }
         }
 
-        // Actualizar metadatos
+        // Actualizar otros metadatos
         updateEntityFromRequest(image, request);
         image = carouselImageRepository.save(image);
 
@@ -142,6 +143,7 @@ public class CarouselImageService {
             }
         }
 
+        logger.info("Imagen del carrusel actualizada: ID={}, imageUrl={}", id, image.getUrl());
         return mapToResponse(image);
     }
 
@@ -173,6 +175,17 @@ public class CarouselImageService {
         if (!ALLOWED_TYPES.contains(file.getContentType())) {
             logger.warn("Tipo de archivo no permitido: {}", file.getContentType());
             throw new IllegalArgumentException("Solo se permiten imágenes JPEG o PNG");
+        }
+    }
+
+    private void validateUrl(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            logger.warn("URL de imagen inválida o nula");
+            throw new IllegalArgumentException("La URL de la imagen es obligatoria");
+        }
+        if (!url.startsWith("http") || !url.contains("cloudinary")) {
+            logger.warn("URL no válida para Cloudinary: {}", url);
+            throw new IllegalArgumentException("La URL debe ser una URL válida de Cloudinary");
         }
     }
 

@@ -198,14 +198,62 @@ public class DataInitializer implements CommandLineRunner {
     private void initializeCarouselImages() {
         if (carouselImageRepository.count() == 0) {
             logger.info("Initializing carousel images...");
-            carouselImageRepository.saveAll(Arrays.asList(
-                    new CarouselImage(null, "/images/carousel1.jpg", "Momentos Inolvidables",
+            List<CarouselImage> carouselImages = Arrays.asList(
+                    new CarouselImage(null,
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/photoquince/carrusel/carousel1.jpg",
+                            "photoquince/carrusel/carousel1",
+                            "Momentos Inolvidables",
                             "Momentos Inolvidables"),
-                    new CarouselImage(null, "/images/carousel2.jpg", "Capturando Emociones",
+                    new CarouselImage(null,
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/photoquince/carrusel/carousel2.jpg",
+                            "photoquince/carrusel/carousel2",
+                            "Capturando Emociones",
                             "Capturando Emociones"),
-                    new CarouselImage(null, "/images/carousel3.jpg", "Tu Historia en Imágenes",
-                            "Tu Historia en Imágenes")));
+                    new CarouselImage(null,
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/photoquince/carrusel/carousel3.jpg",
+                            "photoquince/carrusel/carousel3",
+                            "Tu Historia en Imágenes",
+                            "Tu Historia en Imágenes"));
+            carouselImageRepository.saveAll(carouselImages);
             logger.info("Carousel initialized. Total images: {}", carouselImageRepository.count());
+        }
+    }
+
+    private CarouselImage createCarouselImage(String url, String publicId, String title, String description) {
+        CarouselImage image = new CarouselImage();
+        image.setUrl(url);
+        image.setPublicId(publicId);
+        image.setTitle(title);
+        image.setDescription(description);
+        return image;
+    }
+
+    private CarouselImage uploadCarouselImage(String fileName, String title, String description) {
+        try {
+            ClassPathResource resource = new ClassPathResource("static/images/" + fileName);
+            if (!resource.exists()) {
+                logger.warn("Carousel image file not found: {}. Using default URL.", fileName);
+                return new CarouselImage(null,
+                        "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/photoquince/carrusel/"
+                                + fileName,
+                        "photoquince/carrusel/" + fileName.substring(0, fileName.lastIndexOf(".")),
+                        title,
+                        description);
+            }
+            byte[] imageBytes = resource.getInputStream().readAllBytes();
+            Map uploadResult = cloudinary.uploader().upload(imageBytes,
+                    ObjectUtils.asMap("folder", "photoquince/carrusel"));
+            String url = (String) uploadResult.get("secure_url");
+            String publicId = (String) uploadResult.get("public_id");
+            logger.info("Uploaded carousel image to Cloudinary with public_id: {}", publicId);
+            return new CarouselImage(null, url, publicId, title, description);
+        } catch (IOException e) {
+            logger.error("Error uploading carousel image {} to Cloudinary: {}", fileName, e.getMessage());
+            return new CarouselImage(null,
+                    "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/photoquince/carrusel/" + fileName,
+                    "photoquince/carrusel/" + fileName.substring(0, fileName.lastIndexOf(".")),
+                    title,
+                    description);
         }
     }
 
