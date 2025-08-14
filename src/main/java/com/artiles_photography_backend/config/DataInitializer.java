@@ -159,15 +159,39 @@ public class DataInitializer implements CommandLineRunner {
         if (galleryRepository.count() == 0) {
             logger.info("Initializing gallery...");
             LocalDateTime now = LocalDateTime.now();
-            galleryRepository.saveAll(Arrays.asList(
-                    new Gallery(null, "/images/gallery1.jpg", "Boda al atardecer",
+            List<Gallery> galleries = Arrays.asList(
+                    createGallery(
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/sample1.jpg",
+                            "photoquince/galeria/sample1",
+                            "Boda al atardecer",
+                            "GALLERY",
                             now.minusDays(5)),
-                    new Gallery(null, "/images/gallery2.jpg", "Quinceañera en jardín",
+                    createGallery(
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/sample2.jpg",
+                            "photoquince/galeria/sample2",
+                            "Quinceañera en jardín",
+                            "GALLERY",
                             now.minusDays(3)),
-                    new Gallery(null, "/images/gallery3.jpg", "Sesión familiar en playa",
-                            now.minusDays(1))));
+                    createGallery(
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/sample3.jpg",
+                            "photoquince/galeria/sample3",
+                            "Sesión familiar en playa",
+                            "GALLERY",
+                            now.minusDays(1)));
+            galleryRepository.saveAll(galleries);
             logger.info("Gallery initialized. Total images: {}", galleryRepository.count());
         }
+    }
+
+    private Gallery createGallery(String imageUrl, String publicId, String description, String type,
+            LocalDateTime uploadedAt) {
+        Gallery gallery = new Gallery();
+        gallery.setImageUrl(imageUrl);
+        gallery.setPublicId(publicId);
+        gallery.setDescription(description);
+        gallery.setType(type);
+        gallery.setUploadedAt(uploadedAt);
+        return gallery;
     }
 
     @Transactional

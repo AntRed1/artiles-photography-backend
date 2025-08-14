@@ -35,12 +35,21 @@ public class Gallery {
 
 	@NotNull
 	@Column(nullable = false)
+	private String publicId;
+
+	@NotNull
+	@Column(nullable = false)
 	private String description;
 
 	@NotNull
 	@Column(nullable = false)
-	private LocalDateTime uploadedAt;
+	private String type;
 
-	
+	@Column
+	private String title;
+
+	@NotNull
+	@Column(nullable = false)
+	private LocalDateTime uploadedAt;
 
 }

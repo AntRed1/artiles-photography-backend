@@ -44,4 +44,6 @@ public class GallerySelectRequest {
   @Size(max = 500, message = "La descripción no debe exceder 500 caracteres")
   private String description;
 
+  private String title;
+
 }

@@ -30,6 +30,9 @@ public class GalleryImageUpdateRequest {
 	// Para selección de imagen desde Cloudinary
 	private String publicId;
 
+	// URL de la imagen de Cloudinary
+	private String imageUrl;
+
 	@NotNull(message = "El tipo es obligatorio")
 	private String type;
 
