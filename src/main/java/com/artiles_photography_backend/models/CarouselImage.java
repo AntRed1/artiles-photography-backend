@@ -27,11 +27,12 @@ public class CarouselImage {
     @Column(nullable = false)
     private String url;
 
+    @Column
+    private String publicId;
+
     @Column(nullable = false)
     private String title;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
-
-    
 }

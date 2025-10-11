@@ -1,72 +1,324 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="30 seconds">
 
-    <!-- Variables reutilizables -->
-    <property name="LOG_PATH" value="logs" />
-    <property name="LOG_FILE_NAME" value="application.log" />
-    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
-    <property name="MAX_HISTORY" value="30" />
-    <property name="MAX_FILE_SIZE" value="10MB" />
-    <property name="TOTAL_SIZE_CAP" value="1GB" />
+    <!-- ================================================================================================ -->
+    <!-- PROPIEDADES POR PERFIL -->
+    <!-- ================================================================================================ -->
 
-    <!-- Appender para consola -->
+    <!-- Configuración para desarrollo y testing -->
+    <springProfile name="!prod">
+        <property name="LOG_PATH" value="logs" />
+        <property name="LOG_LEVEL_ROOT" value="INFO" />
+        <property name="LOG_LEVEL_APP" value="DEBUG" />
+        <property name="ENABLE_JSON_LOGGING" value="false" />
+    </springProfile>
+
+    <!-- Configuración para producción -->
+    <springProfile name="prod">
+        <property name="LOG_PATH" value="/var/log/artiles-photography" />
+        <property name="LOG_LEVEL_ROOT" value="WARN" />
+        <property name="LOG_LEVEL_APP" value="INFO" />
+        <property name="ENABLE_JSON_LOGGING" value="true" />
+    </springProfile>
+
+    <!-- ================================================================================================ -->
+    <!-- PROPIEDADES COMUNES -->
+    <!-- ================================================================================================ -->
+
+    <property name="APP_NAME" value="artiles-photography-backend" />
+
+    <!-- Nombres de archivos -->
+    <property name="APP_LOG_FILE" value="${APP_NAME}.log" />
+    <property name="ERROR_LOG_FILE" value="${APP_NAME}-error.log" />
+    <property name="ACCESS_LOG_FILE" value="${APP_NAME}-access.log" />
+    <property name="PERFORMANCE_LOG_FILE" value="${APP_NAME}-performance.log" />
+    <property name="JSON_LOG_FILE" value="${APP_NAME}-json.log" />
+
+    <!-- Patrones de logging -->
+    <property name="CONSOLE_PATTERN" value="%d{HH:mm:ss.SSS} %-5level [%thread] %-40.40logger{39} : %msg%n" />
+    <property name="FILE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %-40.40logger{39} : %msg%n" />
+    <property name="ACCESS_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %X{method:-} %X{uri:-} %X{status:-} %X{duration:-}ms %X{userAgent:-} %X{clientIp:-}" />
+    <property name="PERFORMANCE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %X{operation:-} %X{duration:-}ms %X{status:-} %msg%n" />
+
+    <!-- Configuración de rotación -->
+    <property name="MAX_HISTORY" value="30" />
+    <property name="MAX_FILE_SIZE" value="100MB" />
+    <property name="TOTAL_SIZE_CAP" value="5GB" />
+
+    <!-- ================================================================================================ -->
+    <!-- APPENDERS -->
+    <!-- ================================================================================================ -->
+
+    <!-- Consola para desarrollo -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${CONSOLE_PATTERN}</pattern>
             <charset>UTF-8</charset>
         </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
     </appender>
 
-    <!-- Appender para archivo con rotación por tamaño y fecha -->
-    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/${LOG_FILE_NAME}</file>
+    <!-- Archivo principal de aplicación -->
+    <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_LOG_FILE}</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <fileNamePattern>${LOG_PATH}/${APP_LOG_FILE}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
             <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
             <maxHistory>${MAX_HISTORY}</maxHistory>
             <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
+            <pattern>${FILE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <immediateFlush>false</immediateFlush>
+    </appender>
+
+    <!-- Archivo solo para errores y warnings -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${ERROR_LOG_FILE}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${ERROR_LOG_FILE}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${FILE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
+    <!-- Archivo para logs de acceso HTTP -->
+    <appender name="ACCESS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${ACCESS_LOG_FILE}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${ACCESS_LOG_FILE}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>200MB</maxFileSize>
+            <maxHistory>14</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${ACCESS_PATTERN}</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!-- Loggers específicos -->
-    <logger name="com.artiles_photography_backend" level="INFO" additivity="false">
+    <!-- Archivo para métricas de performance -->
+    <appender name="PERFORMANCE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${PERFORMANCE_LOG_FILE}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${PERFORMANCE_LOG_FILE}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${PERFORMANCE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Appender JSON para producción -->
+    <springProfile name="prod">
+        <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/${JSON_LOG_FILE}</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/${JSON_LOG_FILE}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+                <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+                <maxHistory>${MAX_HISTORY}</maxHistory>
+                <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+                <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            </rollingPolicy>
+            <encoder>
+                <pattern>{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}","level":"%level","thread":"%thread","logger":"%logger","message":"%replace(%msg){'\"','\\"'}%nopex","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}","service":"${APP_NAME}"}%n</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+
+        </appender>
+    </springProfile>
+
+    <!-- ================================================================================================ -->
+    <!-- APPENDERS ASÍNCRONOS -->
+    <!-- ================================================================================================ -->
+
+    <appender name="ASYNC_APP_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="APP_FILE" />
+        <queueSize>2048</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <maxFlushTime>5000</maxFlushTime>
+        <neverBlock>true</neverBlock>
+        <includeCallerData>false</includeCallerData>
+    </appender>
+
+    <appender name="ASYNC_ERROR_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="ERROR_FILE" />
+        <queueSize>1024</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <maxFlushTime>3000</maxFlushTime>
+        <neverBlock>false</neverBlock>
+        <includeCallerData>true</includeCallerData>
+    </appender>
+
+    <appender name="ASYNC_ACCESS_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="ACCESS_FILE" />
+        <queueSize>1024</queueSize>
+        <discardingThreshold>20</discardingThreshold>
+        <maxFlushTime>2000</maxFlushTime>
+        <neverBlock>true</neverBlock>
+        <includeCallerData>false</includeCallerData>
+    </appender>
+
+    <!-- Async JSON appender solo en producción -->
+    <springProfile name="prod">
+        <appender name="ASYNC_JSON_FILE" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="JSON_FILE" />
+            <queueSize>2048</queueSize>
+            <discardingThreshold>0</discardingThreshold>
+            <maxFlushTime>5000</maxFlushTime>
+            <neverBlock>true</neverBlock>
+            <includeCallerData>false</includeCallerData>
+        </appender>
+    </springProfile>
+
+    <!-- ================================================================================================ -->
+    <!-- LOGGERS ESPECÍFICOS -->
+    <!-- ================================================================================================ -->
+
+    <!-- Logger principal de la aplicación -->
+    <logger name="com.artiles_photography_backend" level="${LOG_LEVEL_APP}" additivity="false">
         <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
+        <appender-ref ref="ASYNC_APP_FILE" />
+        <appender-ref ref="ASYNC_ERROR_FILE" />
     </logger>
 
-    <logger name="com.artiles_photography_backend.config.LoggingFilter" level="INFO" additivity="false">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
+    <!-- Logger específico para filtros de acceso -->
+    <logger name="ACCESS_LOG" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_ACCESS_FILE" />
     </logger>
 
+    <!-- Logger específico para métricas de performance -->
+    <logger name="PERFORMANCE_LOG" level="INFO" additivity="false">
+        <appender-ref ref="PERFORMANCE_FILE" />
+    </logger>
+
+    <!-- Loggers por capas de la aplicación -->
+    <logger name="com.artiles_photography_backend.controller" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_APP_FILE" />
+        <appender-ref ref="ASYNC_ACCESS_FILE" />
+        <appender-ref ref="ASYNC_ERROR_FILE" />
+    </logger>
+
+    <logger name="com.artiles_photography_backend.service" level="${LOG_LEVEL_APP}" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_APP_FILE" />
+        <appender-ref ref="ASYNC_ERROR_FILE" />
+    </logger>
+
+    <logger name="com.artiles_photography_backend.repository" level="${LOG_LEVEL_APP}" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_APP_FILE" />
+    </logger>
+
+    <logger name="com.artiles_photography_backend.config" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_APP_FILE" />
+        <appender-ref ref="ASYNC_ERROR_FILE" />
+    </logger>
+
+    <!-- ================================================================================================ -->
+    <!-- LOGGERS DE FRAMEWORKS -->
+    <!-- ================================================================================================ -->
+
+    <!-- Spring Framework -->
     <logger name="org.springframework" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
+        <appender-ref ref="ASYNC_APP_FILE" />
+        <appender-ref ref="ASYNC_ERROR_FILE" />
     </logger>
 
+    <!-- Spring Boot específicos -->
+    <logger name="org.springframework.boot" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_APP_FILE" />
+        <appender-ref ref="ASYNC_ERROR_FILE" />
+    </logger>
+
+    <logger name="org.springframework.boot.actuate" level="WARN" additivity="false">
+        <appender-ref ref="ASYNC_APP_FILE" />
+    </logger>
+
+    <!-- Spring Security -->
+    <logger name="org.springframework.security" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_APP_FILE" />
+        <appender-ref ref="ASYNC_ERROR_FILE" />
+    </logger>
+
+    <!-- Spring Web -->
+    <logger name="org.springframework.web" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_ACCESS_FILE" />
+        <appender-ref ref="ASYNC_ERROR_FILE" />
+    </logger>
+
+    <!-- Hibernate/JPA -->
+    <logger name="org.hibernate" level="WARN" additivity="false">
+        <appender-ref ref="ASYNC_APP_FILE" />
+        <appender-ref ref="ASYNC_ERROR_FILE" />
+    </logger>
+
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_APP_FILE" />
+    </logger>
+
+    <!-- Tomcat/Undertow -->
+    <logger name="org.apache.catalina" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_ACCESS_FILE" />
+        <appender-ref ref="ASYNC_ERROR_FILE" />
+    </logger>
+
+    <!-- Silenciar logs muy verbosos -->
     <logger name="com.zaxxer.hikari" level="WARN" additivity="false">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
+        <appender-ref ref="ASYNC_APP_FILE" />
     </logger>
 
-    <logger name="org.hibernate.SQL" level="WARN" additivity="false">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
+    <logger name="org.apache.http" level="WARN" additivity="false">
+        <appender-ref ref="ASYNC_APP_FILE" />
     </logger>
 
-    <logger name="com.cloudinary" level="INFO" additivity="false">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
+    <logger name="httpclient.wire" level="WARN" additivity="false">
+        <appender-ref ref="ASYNC_APP_FILE" />
     </logger>
 
-    <!-- Logger raíz -->
-    <root level="INFO">
+    <!-- ================================================================================================ -->
+    <!-- LOGGERS ADICIONALES POR PERFIL -->
+    <!-- ================================================================================================ -->
+
+    <!-- Logger JSON adicional solo en producción -->
+    <springProfile name="prod">
+        <logger name="com.artiles_photography_backend" level="${LOG_LEVEL_APP}" additivity="true">
+            <appender-ref ref="ASYNC_JSON_FILE" />
+        </logger>
+    </springProfile>
+
+    <!-- ================================================================================================ -->
+    <!-- ROOT LOGGER -->
+    <!-- ================================================================================================ -->
+
+    <root level="${LOG_LEVEL_ROOT}">
         <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
+        <appender-ref ref="ASYNC_APP_FILE" />
+        <appender-ref ref="ASYNC_ERROR_FILE" />
     </root>
 
 </configuration>

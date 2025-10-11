@@ -1,5 +1,8 @@
 package com.artiles_photography_backend.security;
 
+import java.util.Arrays;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,19 +24,35 @@ import com.artiles_photography_backend.services.JwtService;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.util.Arrays;
-
 /**
  * @author arojas
  *         Configuración de seguridad para la aplicación, incluyendo JWT, CORS,
  *         y control de acceso a endpoints, con soporte para Google Calendar
  *         API.
+ *         Completamente configurable via variables de entorno - SIN HARDCODE.
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
+	// Variables de entorno para CORS
+	@Value("${cors.allowed-origins}")
+	private String[] allowedOrigins;
+
+	@Value("${cors.allowed-methods}")
+	private String[] allowedMethods;
+
+	@Value("${cors.allowed-headers}")
+	private String[] allowedHeaders;
+
+	@Value("${cors.allow-credentials:true}")
+	private boolean allowCredentials;
+
+	@Value("${cors.max-age:3600}")
+	private long maxAge;
+
+	// Dependencias inyectadas
 	private final JwtService jwtService;
 	private final UserDetailsService userDetailsService;
 	private final JwtBlacklistRepository jwtBlacklistRepository;
@@ -78,6 +97,8 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/auth/google").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/calendar/callback").permitAll()
 						.requestMatchers("/api/auth/**", "/api/calendar/callback").permitAll()
+						// Permitir acceso público a Swagger UI y OpenAPI docs
+						.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/contact-info").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/services").permitAll()
@@ -129,13 +150,11 @@ public class SecurityConfig {
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "https://artilesphotography.com",
-				"http://localhost:3000", "http://localhost:5173", "http://localhost/", "http://artiles.local:8080",
-				"http://artiles.local:3000", "http://3.144.121.87"));
-		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-		configuration.setAllowedHeaders(Arrays.asList("*"));
-		configuration.setAllowCredentials(true);
-		configuration.setMaxAge(3600L);
+		configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
+		configuration.setAllowedMethods(Arrays.asList(allowedMethods));
+		configuration.setAllowedHeaders(Arrays.asList(allowedHeaders));
+		configuration.setAllowCredentials(allowCredentials);
+		configuration.setMaxAge(maxAge);
 
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);

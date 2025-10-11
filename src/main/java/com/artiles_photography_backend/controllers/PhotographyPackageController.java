@@ -2,6 +2,8 @@ package com.artiles_photography_backend.controllers;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +33,7 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/packages")
 public class PhotographyPackageController {
 
+	private static final Logger logger = LoggerFactory.getLogger(PhotographyPackageController.class);
 	private final PhotographyPackageService service;
 
 	public PhotographyPackageController(PhotographyPackageService service) {
@@ -59,6 +62,13 @@ public class PhotographyPackageController {
 		return ResponseEntity.status(201).body(service.selectPhotographyPackageImage(request));
 	}
 
+	@PostMapping("/admin/cloudinary")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<PhotographyPackageResponse> createPhotographyPackageWithCloudinary(
+			@RequestBody @Valid PhotographyPackageSelectRequest request) {
+		return ResponseEntity.status(201).body(service.createPhotographyPackageWithCloudinary(request));
+	}
+
 	@PostMapping(value = "/admin/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<PhotographyPackageResponse> createPhotographyPackage(
@@ -70,6 +80,9 @@ public class PhotographyPackageController {
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<PhotographyPackageResponse> updatePhotographyPackage(
 			@PathVariable Long id, @Valid @ModelAttribute PhotographyPackageUploadRequest request) {
+		logger.info("Update request received - ID: {}, File: {}, PublicId: {}",
+				id, request.getFile() != null ? request.getFile().getOriginalFilename() : "none",
+				request.getPublicId());
 		return ResponseEntity.ok(service.updatePhotographyPackage(id, request));
 	}
 

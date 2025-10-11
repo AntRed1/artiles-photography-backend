@@ -26,176 +26,201 @@ import jakarta.transaction.Transactional;
 
 /**
  * @author arojas
- *         Servicio para manejar operaciones relacionadas con imágenes de la
- *         galería, incluyendo subida y eliminación en Cloudinary.
+ * Servicio para manejar operaciones relacionadas con imágenes de la galería, incluyendo subida y eliminación en Cloudinary.
  */
 @Service
 public class GalleryService {
 
-	private static final Logger logger = LoggerFactory.getLogger(GalleryService.class);
-	private static final String CLOUDINARY_FOLDER = "photoquince/galeria";
-	private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-	private static final List<String> ALLOWED_TYPES = List.of("image/jpeg", "image/png");
+    private static final Logger logger = LoggerFactory.getLogger(GalleryService.class);
+    private static final String CLOUDINARY_FOLDER = "photoquince/galeria";
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final List<String> ALLOWED_TYPES = List.of("image/jpeg", "image/png");
 
-	private final GalleryRepository galleryRepository;
-	private final Cloudinary cloudinary;
+    private final GalleryRepository galleryRepository;
+    private final Cloudinary cloudinary;
 
-	public GalleryService(GalleryRepository galleryRepository, Cloudinary cloudinary) {
-		this.galleryRepository = galleryRepository;
-		this.cloudinary = cloudinary;
-	}
+    public GalleryService(GalleryRepository galleryRepository, Cloudinary cloudinary) {
+        this.galleryRepository = galleryRepository;
+        this.cloudinary = cloudinary;
+    }
 
-	public List<GalleryResponse> getAllGalleryImages() {
-		logger.debug("Obteniendo todas las imágenes de la galería ordenadas por uploadedAt");
-		return galleryRepository.findAllByOrderByUploadedAtDesc().stream()
-				.map(this::mapToResponse)
-				.collect(Collectors.toList());
-	}
+    public List<GalleryResponse> getAllGalleryImages() {
+        logger.debug("Obteniendo todas las imágenes de la galería ordenadas por uploadedAt");
+        return galleryRepository.findAllByOrderByUploadedAtDesc().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
 
-	public GalleryResponse getGalleryImageById(Long id) {
-		logger.debug("Obteniendo imagen de la galería con ID: {}", id);
-		Gallery gallery = galleryRepository.findById(id)
-				.orElseThrow(() -> new EntityNotFoundException("Imagen de la galería no encontrada con ID: " + id));
-		return mapToResponse(gallery);
-	}
+    public GalleryResponse getGalleryImageById(Long id) {
+        logger.debug("Obteniendo imagen de la galería con ID: {}", id);
+        Gallery gallery = galleryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Imagen de la galería no encontrada con ID: " + id));
+        return mapToResponse(gallery);
+    }
 
-	@Transactional
-	public GalleryResponse selectGalleryImage(GallerySelectRequest request) {
-		logger.info("Seleccionando imagen existente para la galería con URL: {}", request.getImageUrl());
-		validateUrl(request.getImageUrl());
-		Gallery gallery = new Gallery();
-		gallery.setImageUrl(request.getImageUrl());
-		gallery.setDescription(request.getDescription());
-		gallery.setUploadedAt(LocalDateTime.now());
-		gallery = galleryRepository.save(gallery);
-		return mapToResponse(gallery);
-	}
+    @Transactional
+    public GalleryResponse createGalleryImageWithCloudinary(GallerySelectRequest request) {
+        logger.info("Creando imagen de galería desde Cloudinary con URL: {}", request.getImageUrl());
+        validateUrl(request.getImageUrl());
+        Gallery gallery = new Gallery();
+        gallery.setImageUrl(request.getImageUrl());
+        gallery.setPublicId(extractPublicId(request.getImageUrl())); // Establecer publicId
+        gallery.setDescription(request.getDescription());
+        gallery.setType("GALLERY"); // Valor por defecto
+        gallery.setUploadedAt(LocalDateTime.now());
+        gallery = galleryRepository.save(gallery);
+        logger.info("Imagen de galería creada exitosamente con ID: {}", gallery.getId());
+        return mapToResponse(gallery);
+    }
 
-	private void validateUrl(String url) {
-		if (url == null || url.trim().isEmpty()) {
-			logger.warn("URL de imagen inválida o nula");
-			throw new IllegalArgumentException("La URL de la imagen es obligatoria");
-		}
-		if (!url.startsWith("http") || !url.contains("cloudinary")) {
-			logger.warn("URL no válida para Cloudinary: {}", url);
-			throw new IllegalArgumentException("La URL debe ser una URL válida de Cloudinary");
-		}
-	}
+    @Transactional
+    public GalleryResponse selectGalleryImage(GallerySelectRequest request) {
+        logger.info("Seleccionando imagen existente para la galería con URL: {}", request.getImageUrl());
+        validateUrl(request.getImageUrl());
+        Gallery gallery = new Gallery();
+        gallery.setImageUrl(request.getImageUrl());
+        gallery.setPublicId(extractPublicId(request.getImageUrl())); // Establecer publicId
+        gallery.setDescription(request.getDescription());
+        gallery.setType("GALLERY"); // Valor por defecto
+        gallery = galleryRepository.save(gallery);
+        return mapToResponse(gallery);
+    }
 
-	@Transactional
-	public GalleryResponse createGalleryImage(GalleryUploadRequest request) {
-		logger.info("Subiendo nueva imagen de la galería con descripción: {}", request.getDescription());
-		validateFile(request.getFile());
-		try {
-			Map uploadResult = cloudinary.uploader().upload(request.getFile().getBytes(),
-					ObjectUtils.asMap("folder", CLOUDINARY_FOLDER));
-			String url = (String) uploadResult.get("secure_url");
-			String publicId = (String) uploadResult.get("public_id");
-			Gallery gallery = new Gallery();
-			gallery.setImageUrl(url);
-			gallery.setDescription(request.getDescription());
-			gallery.setUploadedAt(LocalDateTime.now());
-			gallery = galleryRepository.save(gallery);
-			logger.info("Imagen subida exitosamente a Cloudinary con public_id: {}", publicId);
-			return mapToResponse(gallery);
-		} catch (IOException e) {
-			logger.error("Error al subir imagen a Cloudinary: {}", e.getMessage());
-			throw new CloudinaryUploadException("Error al subir la imagen a Cloudinary", e);
-		}
-	}
+    private void validateUrl(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            logger.warn("URL de imagen inválida o nula");
+            throw new IllegalArgumentException("La URL de la imagen es obligatoria");
+        }
+        if (!url.startsWith("http") || !url.contains("cloudinary")) {
+            logger.warn("URL no válida para Cloudinary: {}", url);
+            throw new IllegalArgumentException("La URL debe ser una URL válida de Cloudinary");
+        }
+    }
 
-	@Transactional
-	public GalleryResponse updateGalleryImage(Long id, GalleryImageUpdateRequest request) {
-		logger.info("Actualizando imagen de la galería con ID: {}", id);
-		Gallery gallery = galleryRepository.findById(id)
-				.orElseThrow(() -> new EntityNotFoundException("Imagen de la galería no encontrada con ID: " + id));
+    @Transactional
+    public GalleryResponse createGalleryImage(GalleryUploadRequest request) {
+        logger.info("Subiendo nueva imagen de la galería con descripción: {}", request.getDescription());
+        validateFile(request.getFile());
+        try {
+            Map uploadResult = cloudinary.uploader().upload(request.getFile().getBytes(),
+                    ObjectUtils.asMap("folder", CLOUDINARY_FOLDER));
+            String url = (String) uploadResult.get("secure_url");
+            String publicId = (String) uploadResult.get("public_id");
+            Gallery gallery = new Gallery();
+            gallery.setImageUrl(url);
+            gallery.setPublicId(publicId);
+            gallery.setDescription(request.getDescription());
+            gallery.setType("GALLERY"); // Valor por defecto
+            gallery.setUploadedAt(LocalDateTime.now());
+            gallery = galleryRepository.save(gallery);
+            logger.info("Imagen subida exitosamente a Cloudinary con public_id: {}", publicId);
+            return mapToResponse(gallery);
+        } catch (IOException e) {
+            logger.error("Error al subir imagen a Cloudinary: {}", e.getMessage());
+            throw new CloudinaryUploadException("Error al subir la imagen a Cloudinary", e);
+        }
+    }
 
-		String oldPublicId = null;
-		if (request.getFile() != null && !request.getFile().isEmpty()) {
-			validateFile(request.getFile());
-			try {
-				// Guardar el public_id de la imagen anterior para eliminarla después
-				oldPublicId = extractPublicId(gallery.getImageUrl());
-				// Subir la nueva imagen a Cloudinary
-				Map uploadResult = cloudinary.uploader().upload(request.getFile().getBytes(),
-						ObjectUtils.asMap("folder", CLOUDINARY_FOLDER));
-				gallery.setImageUrl((String) uploadResult.get("secure_url"));
-				logger.info("Nueva imagen subida a Cloudinary con public_id: {}", uploadResult.get("public_id"));
-			} catch (IOException e) {
-				logger.error("Error al subir nueva imagen a Cloudinary: {}", e.getMessage());
-				throw new CloudinaryUploadException("Error al subir la nueva imagen a Cloudinary", e);
-			}
-		}
+    @Transactional
+    public GalleryResponse updateGalleryImage(Long id, GalleryImageUpdateRequest request) {
+        logger.info("Actualizando imagen de la galería con ID: {}", id);
+        Gallery gallery = galleryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Imagen de la galería no encontrada con ID: " + id));
 
-		// Actualizar metadatos
-		updateEntityFromRequest(gallery, request);
-		gallery = galleryRepository.save(gallery);
+        String oldPublicId = null;
+        if (request.getFile() != null && !request.getFile().isEmpty()) {
+            validateFile(request.getFile());
+            try {
+                oldPublicId = extractPublicId(gallery.getImageUrl());
+                Map uploadResult = cloudinary.uploader().upload(request.getFile().getBytes(),
+                        ObjectUtils.asMap("folder", CLOUDINARY_FOLDER));
+                gallery.setImageUrl((String) uploadResult.get("secure_url"));
+                gallery.setPublicId((String) uploadResult.get("public_id"));
+                logger.info("Nueva imagen subida a Cloudinary con public_id: {}", uploadResult.get("public_id"));
+            } catch (IOException e) {
+                logger.error("Error al subir nueva imagen a Cloudinary: {}", e.getMessage());
+                throw new CloudinaryUploadException("Error al subir la nueva imagen a Cloudinary", e);
+            }
+        } else if (request.getPublicId() != null && request.getImageUrl() != null) {
+            validateUrl(request.getImageUrl());
+            oldPublicId = extractPublicId(gallery.getImageUrl());
+            gallery.setPublicId(request.getPublicId());
+            gallery.setImageUrl(request.getImageUrl());
+            logger.info("Imagen actualizada con nuevo public_id: {}", request.getPublicId());
+        }
 
-		// Eliminar la imagen anterior de Cloudinary si se subió una nueva
-		if (oldPublicId != null) {
-			try {
-				cloudinary.uploader().destroy(oldPublicId, ObjectUtils.emptyMap());
-				logger.info("Imagen anterior eliminada de Cloudinary con public_id: {}", oldPublicId);
-			} catch (IOException e) {
-				logger.warn("Error al eliminar imagen anterior de Cloudinary: {}", e.getMessage());
-				// No lanzar excepción para no interrumpir la actualización
-			}
-		}
+        updateEntityFromRequest(gallery, request);
+        gallery = galleryRepository.save(gallery);
 
-		return mapToResponse(gallery);
-	}
+        if (oldPublicId != null) {
+            try {
+                cloudinary.uploader().destroy(oldPublicId, ObjectUtils.emptyMap());
+                logger.info("Imagen anterior eliminada de Cloudinary con public_id: {}", oldPublicId);
+            } catch (IOException e) {
+                logger.warn("Error al eliminar imagen anterior de Cloudinary: {}", e.getMessage());
+            }
+        }
 
-	@Transactional
-	public void deleteGalleryImage(Long id) {
-		logger.info("Eliminando imagen de la galería con ID: {}", id);
-		Gallery gallery = galleryRepository.findById(id)
-				.orElseThrow(() -> new EntityNotFoundException("Imagen de la galería no encontrada con ID: " + id));
-		try {
-			String publicId = extractPublicId(gallery.getImageUrl());
-			cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-			logger.info("Imagen eliminada de Cloudinary con public_id: {}", publicId);
-		} catch (IOException e) {
-			logger.error("Error al eliminar imagen de Cloudinary: {}", e.getMessage());
-			throw new CloudinaryUploadException("Error al eliminar la imagen de Cloudinary", e);
-		}
-		galleryRepository.deleteById(id);
-	}
+        return mapToResponse(gallery);
+    }
 
-	private void validateFile(MultipartFile file) {
-		if (file == null || file.isEmpty()) {
-			logger.warn("Archivo de imagen vacío o nulo");
-			throw new IllegalArgumentException("El archivo de imagen es obligatorio");
-		}
-		if (file.getSize() > MAX_FILE_SIZE) {
-			logger.warn("Archivo de imagen excede el tamaño máximo: {} bytes", file.getSize());
-			throw new IllegalArgumentException("El archivo excede el tamaño máximo de 5MB");
-		}
-		if (!ALLOWED_TYPES.contains(file.getContentType())) {
-			logger.warn("Tipo de archivo no permitido: {}", file.getContentType());
-			throw new IllegalArgumentException("Solo se permiten imágenes JPEG o PNG");
-		}
-	}
+    @Transactional
+    public void deleteGalleryImage(Long id) {
+        logger.info("Eliminando imagen de la galería con ID: {}", id);
+        Gallery gallery = galleryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Imagen de la galería no encontrada con ID: " + id));
+        try {
+            String publicId = extractPublicId(gallery.getImageUrl());
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            logger.info("Imagen eliminada de Cloudinary con public_id: {}", publicId);
+        } catch (IOException e) {
+            logger.error("Error al eliminar imagen de Cloudinary: {}", e.getMessage());
+            throw new CloudinaryUploadException("Error al eliminar la imagen de Cloudinary", e);
+        }
+        galleryRepository.deleteById(id);
+    }
 
-	private String extractPublicId(String url) {
-		String[] parts = url.split("/");
-		String fileName = parts[parts.length - 1];
-		String imageId = fileName.substring(0, fileName.lastIndexOf("."));
-		String publicId = String.join("/", parts[parts.length - 3], parts[parts.length - 2], imageId);
-		return publicId;
-	}
+    private void validateFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            logger.warn("Archivo de imagen vacío o nulo");
+            throw new IllegalArgumentException("El archivo de imagen es obligatorio");
+        }
+        if (file.getSize() > MAX_FILE_SIZE) {
+            logger.warn("Archivo de imagen excede el tamaño máximo: {} bytes", file.getSize());
+            throw new IllegalArgumentException("El archivo excede el tamaño máximo de 5MB");
+        }
+        if (!ALLOWED_TYPES.contains(file.getContentType())) {
+            logger.warn("Tipo de archivo no permitido: {}", file.getContentType());
+            throw new IllegalArgumentException("Solo se permiten imágenes JPEG o PNG");
+        }
+    }
 
-	private void updateEntityFromRequest(Gallery gallery, GalleryImageUpdateRequest request) {
-		if (request.getDescription() != null) {
-			gallery.setDescription(request.getDescription());
-		}
-	}
+    private String extractPublicId(String url) {
+        String[] parts = url.split("/");
+        String fileName = parts[parts.length - 1];
+        String imageId = fileName.substring(0, fileName.lastIndexOf("."));
+        String publicId = String.join("/", parts[parts.length - 3], parts[parts.length - 2], imageId);
+        return publicId;
+    }
 
-	private GalleryResponse mapToResponse(Gallery gallery) {
-		GalleryResponse response = new GalleryResponse();
-		response.setId(gallery.getId());
-		response.setImageUrl(gallery.getImageUrl());
-		response.setDescription(gallery.getDescription());
-		response.setUploadedAt(gallery.getUploadedAt());
-		return response;
-	}
+    private void updateEntityFromRequest(Gallery gallery, GalleryImageUpdateRequest request) {
+        if (request.getDescription() != null) {
+            gallery.setDescription(request.getDescription());
+        }
+        if (request.getType() != null) {
+            gallery.setType(request.getType());
+        }
+        if (request.getTitle() != null) {
+            gallery.setTitle(request.getTitle());
+        }
+    }
+
+    private GalleryResponse mapToResponse(Gallery gallery) {
+        GalleryResponse response = new GalleryResponse();
+        response.setId(gallery.getId());
+        response.setImageUrl(gallery.getImageUrl());
+        response.setDescription(gallery.getDescription());
+        response.setUploadedAt(gallery.getUploadedAt());
+        return response;
+    }
 }

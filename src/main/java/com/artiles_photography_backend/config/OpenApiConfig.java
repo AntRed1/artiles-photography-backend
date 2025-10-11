@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2025 neta1.
+ * Copyright 2025 arojas.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,28 +22,26 @@
  * THE SOFTWARE.
  */
 
-package com.artiles_photography_backend.dtos;
+package com.artiles_photography_backend.config;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.Data;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  *
- * @author neta1
+ * @author arojas
  */
-@Data
-public class GallerySelectRequest {
+@Configuration
+public class OpenApiConfig {
 
-  @NotBlank(message = "La URL de la imagen es obligatoria")
-  private String imageUrl;
-
-  @NotBlank(message = "El publicId es obligatorio")
-  private String publicId;
-
-  @Size(max = 500, message = "La descripción no debe exceder 500 caracteres")
-  private String description;
-
-  private String title;
-
+	@Bean
+	public OpenAPI customOpenAPI() {
+		return new OpenAPI()
+				.info(new Info()
+						.title("Mi API PhotoQuince")
+						.version("v1")
+						.description("Documentación automática generada con springdoc-openapi"));
+	}
 }

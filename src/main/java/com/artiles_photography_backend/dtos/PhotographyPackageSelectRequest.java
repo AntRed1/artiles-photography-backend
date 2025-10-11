@@ -24,35 +24,60 @@
 
 package com.artiles_photography_backend.dtos;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
- *
- * @author neta1
+ * @author arojas
+ *         DTO para solicitudes de creación/actualización de paquetes
+ *         fotográficos con imágenes de Cloudinary.
  */
 @Data
 public class PhotographyPackageSelectRequest {
 
-  @NotNull(message = "El ID del paquete es obligatorio")
-  private Long id;
+  private Long id; // Para actualizaciones
 
-  @NotBlank(message = "La URL de la imagen es obligatoria")
-  private String imageUrl;
+  @NotBlank(message = "El publicId es obligatorio")
+  private String publicId;
 
-  @Size(max = 100, message = "El título no debe exceder 100 caracteres")
+  @NotBlank(message = "El título es obligatorio")
+  @Size(max = 100, message = "El título no puede exceder los 100 caracteres")
   private String title;
 
-  @Size(max = 500, message = "La descripción no debe exceder 500 caracteres")
+  @NotBlank(message = "La descripción es obligatoria")
+  @Size(max = 500, message = "La descripción no puede exceder los 500 caracteres")
   private String description;
 
-  private Double price;
+  @NotNull(message = "El precio es obligatorio")
+  @Positive(message = "El precio debe ser mayor que 0")
+  private BigDecimal price; // CAMBIADO DE Double A BigDecimal
+
+  @NotNull(message = "El estado activo es obligatorio")
   private Boolean isActive;
+
+  @NotNull(message = "La visibilidad del precio es obligatoria")
   private Boolean showPrice;
-  private List<String> features;
-  
+
+  @NotEmpty(message = "Las características son obligatorias")
+  @Size(min = 1, max = 20, message = "Debe haber entre 1 y 20 características")
+  private List<@NotBlank(message = "Cada característica debe tener contenido") @Size(max = 200, message = "Cada característica no puede exceder los 200 caracteres") String> features;
+
+  // MÉTODO AGREGADO PARA ARREGLAR ERROR DE COMPILACIÓN
+  @NotBlank(message = "La URL de imagen es obligatoria")
+  private String imageUrl;
+
+  public String getImageUrl() {
+    return imageUrl;
+  }
+
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
+  }
 }

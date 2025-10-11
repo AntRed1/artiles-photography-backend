@@ -1,6 +1,7 @@
 package com.artiles_photography_backend.config;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -158,29 +159,101 @@ public class DataInitializer implements CommandLineRunner {
         if (galleryRepository.count() == 0) {
             logger.info("Initializing gallery...");
             LocalDateTime now = LocalDateTime.now();
-            galleryRepository.saveAll(Arrays.asList(
-                    new Gallery(null, "/images/gallery1.jpg", "Boda al atardecer",
+            List<Gallery> galleries = Arrays.asList(
+                    createGallery(
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/sample1.jpg",
+                            "photoquince/galeria/sample1",
+                            "Boda al atardecer",
+                            "GALLERY",
                             now.minusDays(5)),
-                    new Gallery(null, "/images/gallery2.jpg", "Quinceañera en jardín",
+                    createGallery(
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/sample2.jpg",
+                            "photoquince/galeria/sample2",
+                            "Quinceañera en jardín",
+                            "GALLERY",
                             now.minusDays(3)),
-                    new Gallery(null, "/images/gallery3.jpg", "Sesión familiar en playa",
-                            now.minusDays(1))));
+                    createGallery(
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/sample3.jpg",
+                            "photoquince/galeria/sample3",
+                            "Sesión familiar en playa",
+                            "GALLERY",
+                            now.minusDays(1)));
+            galleryRepository.saveAll(galleries);
             logger.info("Gallery initialized. Total images: {}", galleryRepository.count());
         }
+    }
+
+    private Gallery createGallery(String imageUrl, String publicId, String description, String type,
+            LocalDateTime uploadedAt) {
+        Gallery gallery = new Gallery();
+        gallery.setImageUrl(imageUrl);
+        gallery.setPublicId(publicId);
+        gallery.setDescription(description);
+        gallery.setType(type);
+        gallery.setUploadedAt(uploadedAt);
+        return gallery;
     }
 
     @Transactional
     private void initializeCarouselImages() {
         if (carouselImageRepository.count() == 0) {
             logger.info("Initializing carousel images...");
-            carouselImageRepository.saveAll(Arrays.asList(
-                    new CarouselImage(null, "/images/carousel1.jpg", "Momentos Inolvidables",
+            List<CarouselImage> carouselImages = Arrays.asList(
+                    new CarouselImage(null,
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/photoquince/carrusel/carousel1.jpg",
+                            "photoquince/carrusel/carousel1",
+                            "Momentos Inolvidables",
                             "Momentos Inolvidables"),
-                    new CarouselImage(null, "/images/carousel2.jpg", "Capturando Emociones",
+                    new CarouselImage(null,
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/photoquince/carrusel/carousel2.jpg",
+                            "photoquince/carrusel/carousel2",
+                            "Capturando Emociones",
                             "Capturando Emociones"),
-                    new CarouselImage(null, "/images/carousel3.jpg", "Tu Historia en Imágenes",
-                            "Tu Historia en Imágenes")));
+                    new CarouselImage(null,
+                            "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/photoquince/carrusel/carousel3.jpg",
+                            "photoquince/carrusel/carousel3",
+                            "Tu Historia en Imágenes",
+                            "Tu Historia en Imágenes"));
+            carouselImageRepository.saveAll(carouselImages);
             logger.info("Carousel initialized. Total images: {}", carouselImageRepository.count());
+        }
+    }
+
+    private CarouselImage createCarouselImage(String url, String publicId, String title, String description) {
+        CarouselImage image = new CarouselImage();
+        image.setUrl(url);
+        image.setPublicId(publicId);
+        image.setTitle(title);
+        image.setDescription(description);
+        return image;
+    }
+
+    private CarouselImage uploadCarouselImage(String fileName, String title, String description) {
+        try {
+            ClassPathResource resource = new ClassPathResource("static/images/" + fileName);
+            if (!resource.exists()) {
+                logger.warn("Carousel image file not found: {}. Using default URL.", fileName);
+                return new CarouselImage(null,
+                        "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/photoquince/carrusel/"
+                                + fileName,
+                        "photoquince/carrusel/" + fileName.substring(0, fileName.lastIndexOf(".")),
+                        title,
+                        description);
+            }
+            byte[] imageBytes = resource.getInputStream().readAllBytes();
+            Map uploadResult = cloudinary.uploader().upload(imageBytes,
+                    ObjectUtils.asMap("folder", "photoquince/carrusel"));
+            String url = (String) uploadResult.get("secure_url");
+            String publicId = (String) uploadResult.get("public_id");
+            logger.info("Uploaded carousel image to Cloudinary with public_id: {}", publicId);
+            return new CarouselImage(null, url, publicId, title, description);
+        } catch (IOException e) {
+            logger.error("Error uploading carousel image {} to Cloudinary: {}", fileName, e.getMessage());
+            return new CarouselImage(null,
+                    "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/photoquince/carrusel/" + fileName,
+                    "photoquince/carrusel/" + fileName.substring(0, fileName.lastIndexOf(".")),
+                    title,
+                    description);
         }
     }
 
@@ -190,32 +263,32 @@ public class DataInitializer implements CommandLineRunner {
             logger.info("Initializing photography packages...");
             photographyPackageRepository.saveAll(Arrays.asList(
                     new PhotographyPackage(null, "Paquete Quinceañeras",
-                            "Sesión completa para quinceañeras", 500.0, true, true,
+                            "Sesión completa para quinceañeras", BigDecimal.valueOf(500.0), true, true,
                             "/images/package1.jpg",
                             Arrays.asList("Sesión de 4 horas", "50 fotos editadas",
                                     "3 cambios de vestuario", "Entrega digital",
                                     "Álbum digital")),
                     new PhotographyPackage(null, "Paquete Bodas", "Cobertura total de bodas",
-                            1500.0, true, true, "/images/package2.jpg",
+                            BigDecimal.valueOf(1500.0), true, true, "/images/package2.jpg",
                             Arrays.asList("Sesión de 8 horas", "200 fotos editadas",
                                     "Sesión pre-boda", "Entrega digital",
                                     "Video highlights", "USB personalizado")),
                     new PhotographyPackage(null, "Paquete Graduación", "Sesión para graduaciones",
-                            300.0, true, true, "/images/package3.jpg",
+                            BigDecimal.valueOf(300.0), true, true, "/images/package3.jpg",
                             Arrays.asList("Sesión de 2 horas", "30 fotos editadas",
                                     "2 cambios de vestuario", "Entrega digital",
                                     "Álbum digital")),
-                    new PhotographyPackage(null, "Paquete Familiar", "Sesión para familias", 400.0,
+                    new PhotographyPackage(null, "Paquete Familiar", "Sesión para familias", BigDecimal.valueOf(400.0),
                             true, true, "/images/package4.jpg",
                             Arrays.asList("Sesión de 3 horas", "40 fotos editadas",
                                     "Múltiples locaciones", "Entrega digital",
                                     "Álbum digital")),
-                    new PhotographyPackage(null, "Paquete Bebés", "Sesión para bebés", 250.0, false,
+                    new PhotographyPackage(null, "Paquete Bebés", "Sesión para bebés", BigDecimal.valueOf(250.0), false,
                             false, "/images/package5.jpg",
                             Arrays.asList("Sesión de 2 horas", "25 fotos editadas",
                                     "Props especiales", "Entrega digital",
                                     "Álbum digital")),
-                    new PhotographyPackage(null, "Paquete Eventos", "Cobertura de eventos", 800.0,
+                    new PhotographyPackage(null, "Paquete Eventos", "Cobertura de eventos", BigDecimal.valueOf(800.0),
                             true, true, "/images/package6.jpg",
                             Arrays.asList("Sesión de 6 horas", "150 fotos editadas",
                                     "Fotografía grupal", "Entrega digital",
@@ -290,19 +363,32 @@ public class DataInitializer implements CommandLineRunner {
         if (photographyServiceRepository.count() == 0) {
             logger.info("Initializing photography services...");
             List<PhotographyService> services = Arrays.asList(
-                    new PhotographyService(null, "Álbum Digital", "fa-book"),
-                    new PhotographyService(null, "Enmarcados", "fa-image"),
-                    new PhotographyService(null, "Llaveros Personalizados", "fa-key"),
-                    new PhotographyService(null, "Fotos Impresas", "fa-print"),
-                    new PhotographyService(null, "Vestidos de Embarazadas", "fa-female"),
-                    new PhotographyService(null, "Vestidos de Quinceañeras", "fa-crown"),
-                    new PhotographyService(null, "Togas y Birretes", "fa-graduation-cap"),
-                    new PhotographyService(null, "Coronas", "fa-gem"),
-                    new PhotographyService(null, "Números y Letras", "fa-font"),
-                    new PhotographyService(null, "Pizarras Personalizadas", "fa-chalkboard"),
-                    new PhotographyService(null, "Arreglos Florales", "fa-leaf"),
-                    new PhotographyService(null, "Bengalas de Humo", "fa-fire"),
-                    new PhotographyService(null, "Sombrillas Creativas", "fa-umbrella"));
+                    new PhotographyService(null, "Álbum Digital", "fa-book", "Álbum digital personalizado",
+                            BigDecimal.valueOf(50.0)),
+                    new PhotographyService(null, "Enmarcados", "fa-image", "Marcos personalizados para fotos",
+                            BigDecimal.valueOf(25.0)),
+                    new PhotographyService(null, "Llaveros Personalizados", "fa-key",
+                            "Llaveros con tus fotos favoritas", BigDecimal.valueOf(10.0)),
+                    new PhotographyService(null, "Fotos Impresas", "fa-print", "Impresión de alta calidad",
+                            BigDecimal.valueOf(5.0)),
+                    new PhotographyService(null, "Vestidos de Embarazadas", "fa-female",
+                            "Vestuario para sesiones de maternidad", BigDecimal.valueOf(75.0)),
+                    new PhotographyService(null, "Vestidos de Quinceañeras", "fa-crown",
+                            "Vestidos elegantes para quinceañeras", BigDecimal.valueOf(150.0)),
+                    new PhotographyService(null, "Togas y Birretes", "fa-graduation-cap", "Vestuario para graduaciones",
+                            BigDecimal.valueOf(40.0)),
+                    new PhotographyService(null, "Coronas", "fa-gem", "Coronas decorativas para eventos",
+                            BigDecimal.valueOf(30.0)),
+                    new PhotographyService(null, "Números y Letras", "fa-font",
+                            "Props personalizados con números y letras", BigDecimal.valueOf(20.0)),
+                    new PhotographyService(null, "Pizarras Personalizadas", "fa-chalkboard",
+                            "Pizarras con mensajes personalizados", BigDecimal.valueOf(35.0)),
+                    new PhotographyService(null, "Arreglos Florales", "fa-leaf", "Decoración floral para sesiones",
+                            BigDecimal.valueOf(60.0)),
+                    new PhotographyService(null, "Bengalas de Humo", "fa-fire",
+                            "Efectos especiales con humo de colores", BigDecimal.valueOf(15.0)),
+                    new PhotographyService(null, "Sombrillas Creativas", "fa-umbrella", "Props creativos para sesiones",
+                            BigDecimal.valueOf(25.0)));
 
             for (PhotographyService service : services) {
                 if (photographyServiceRepository.findByTitle(service.getTitle()).isEmpty()) {
@@ -377,8 +463,7 @@ public class DataInitializer implements CommandLineRunner {
             String twitterUrl = validateUrl(contactInfo.getTwitter()) ? contactInfo.getTwitter() : "";
             String tiktokUrl = validateUrl(contactInfo.getTiktok()) ? contactInfo.getTiktok() : "";
 
-            StringBuilder socialMediaLinks = new StringBuilder(
-                    "<div class='social-media' style='text-align: center; margin-top: 20px;'>");
+            StringBuilder socialMediaLinks = new StringBuilder();
             if (!facebookUrl.isEmpty()) {
                 socialMediaLinks.append(String.format(
                         "<a href='%s' style='margin: 0 8px; width: 32px; height: 32px; background-color: #333333; border-radius: 50%%; text-align: center; line-height: 32px; display: inline-block; transition: background-color 0.3s ease;'><img src='https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/facebook.svg' alt='Facebook' width='20' height='20' style='vertical-align: middle;'></a>",
@@ -399,152 +484,150 @@ public class DataInitializer implements CommandLineRunner {
                         "<a href='%s' style='margin: 0 8px; width: 32px; height: 32px; background-color: #333333; border-radius: 50%%; text-align: center; line-height: 32px; display: inline-block; transition: background-color 0.3s ease;'><img src='https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/tiktok.svg' alt='TikTok' width='20' height='20' style='vertical-align: middle;'></a>",
                         tiktokUrl));
             }
-            socialMediaLinks.append("</div>");
 
-            String commonStyles = """
-                    body {
-                        font-family: 'Helvetica Neue', 'Arial', 'Verdana', sans-serif;
-                        color: #333;
-                        line-height: 1.6;
-                        margin: 0;
-                        padding: 0;
-                        background-color: #f4f4f4;
-                    }
-                    .container {
-                        max-width: 600px;
-                        margin: 20px auto;
-                        padding: 20px;
-                        border: 2px solid #e0e0e0;
-                        border-radius: 12px;
-                        background-color: #f9f9f9;
-                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                    }
-                    .header {
-                        background-color: #333333;
-                        color: white;
-                        padding: 20px;
-                        text-align: center;
-                        border-radius: 10px 10px 0 0;
-                    }
-                    .header img {
-                        max-width: 160px;
-                        height: auto;
-                        margin-bottom: 10px;
-                    }
-                    .content {
-                        padding: 25px;
-                        background-color: white;
-                        border-radius: 0 0 10px 10px;
-                    }
-                    .greeting {
-                        margin-bottom: 20px;
-                        font-size: 16px;
-                        font-weight: 500;
-                    }
-                    .field {
-                        margin-bottom: 20px;
-                    }
-                    .field-label {
-                        font-weight: bold;
-                        color: #444;
-                        display: flex;
-                        align-items: center;
-                    }
-                    .field-label::before {
-                        content: '📷';
-                        margin-right: 8px;
-                        font-size: 16px;
-                    }
-                    .field-value {
-                        margin: 5px 0 0 24px;
-                        color: #555;
-                    }
-                    .action-button {
-                        display: inline-block;
-                        padding: 12px 24px;
-                        margin-top: 20px;
-                        background-color: #e6b800;
-                        color: white;
-                        text-decoration: none;
-                        border-radius: 8px;
-                        font-size: 16px;
-                        font-weight: 600;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                        transition: background-color 0.3s ease, transform 0.2s ease;
-                    }
-                    .action-button:hover {
-                        background-color: #cc9900;
-                        transform: translateY(-2px);
-                    }
-                    .footer {
-                        text-align: center;
-                        margin-top: 25px;
-                        font-size: 12px;
-                        color: #777;
-                    }
-                    .footer a {
-                        color: #e6b800;
-                        text-decoration: none;
-                    }
-                    .footer a:hover {
-                        text-decoration: underline;
-                    }
-                    .social-media a {
-                        display: inline-block;
-                        margin: 0 8px;
-                        width: 32px;
-                        height: 32px;
-                        background-color: #333333;
-                        border-radius: 50%;
-                        text-align: center;
-                        line-height: 32px;
-                        transition: background-color 0.3s ease;
-                    }
-                    .social-media img {
-                        width: 20px;
-                        height: 20px;
-                        vertical-align: middle;
-                    }
-                    .social-media a:hover {
-                        background-color: #e6b800;
-                    }
-                    @media screen and (max-width: 600px) {
-                        .container {
-                            margin: 10px;
-                            padding: 15px;
-                        }
-                        .header {
-                            padding: 15px;
-                        }
-                        .header img {
-                            max-width: 120px;
-                        }
-                        .content {
-                            padding: 15px;
-                        }
-                        .action-button {
-                            padding: 10px 20px;
-                            font-size: 14px;
-                        }
-                        .social-media a {
-                            width: 28px;
-                            height: 28px;
-                            line-height: 28px;
-                        }
-                        .social-media img {
-                            width: 18px;
-                            height: 18px;
-                        }
-                    }
-                    """;
-
+            // Plantilla 1: CONTACT_MESSAGE_COMPANY
             String contactMessageCompanyTemplate = """
                     <!DOCTYPE html>
                     <html>
                     <head>
                         <meta charset="UTF-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <style>%s</style>
+                        <style>
+                            body {
+                                font-family: 'Helvetica Neue', 'Arial', 'Verdana', sans-serif;
+                                color: #333;
+                                line-height: 1.6;
+                                margin: 0;
+                                padding: 0;
+                                background-color: #f4f4f4;
+                            }
+                            .container {
+                                max-width: 600px;
+                                margin: 20px auto;
+                                padding: 20px;
+                                border: 2px solid #e0e0e0;
+                                border-radius: 12px;
+                                background-color: #f9f9f9;
+                                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                            }
+                            .header {
+                                background-color: #333333;
+                                color: white;
+                                padding: 20px;
+                                text-align: center;
+                                border-radius: 10px 10px 0 0;
+                            }
+                            .header img {
+                                max-width: 160px;
+                                height: auto;
+                                margin-bottom: 10px;
+                            }
+                            .content {
+                                padding: 25px;
+                                background-color: white;
+                                border-radius: 0 0 10px 10px;
+                            }
+                            .greeting {
+                                margin-bottom: 20px;
+                                font-size: 16px;
+                                font-weight: 500;
+                            }
+                            .field {
+                                margin-bottom: 20px;
+                            }
+                            .field-label {
+                                font-weight: bold;
+                                color: #444;
+                                display: flex;
+                                align-items: center;
+                            }
+                            .field-label::before {
+                                content: '📷';
+                                margin-right: 8px;
+                                font-size: 16px;
+                            }
+                            .field-value {
+                                margin: 5px 0 0 24px;
+                                color: #555;
+                            }
+                            .action-button {
+                                display: inline-block;
+                                padding: 12px 24px;
+                                margin-top: 20px;
+                                background-color: #e6b800;
+                                color: white;
+                                text-decoration: none;
+                                border-radius: 8px;
+                                font-size: 16px;
+                                font-weight: 600;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                                transition: background-color 0.3s ease, transform 0.2s ease;
+                            }
+                            .action-button:hover {
+                                background-color: #cc9900;
+                                transform: translateY(-2px);
+                            }
+                            .footer {
+                                text-align: center;
+                                margin-top: 25px;
+                                font-size: 12px;
+                                color: #777;
+                            }
+                            .footer a {
+                                color: #e6b800;
+                                text-decoration: none;
+                            }
+                            .footer a:hover {
+                                text-decoration: underline;
+                            }
+                            .social-media a {
+                                display: inline-block;
+                                margin: 0 8px;
+                                width: 32px;
+                                height: 32px;
+                                background-color: #333333;
+                                border-radius: 50%;
+                                text-align: center;
+                                line-height: 32px;
+                                transition: background-color 0.3s ease;
+                            }
+                            .social-media img {
+                                width: 20px;
+                                height: 20px;
+                                vertical-align: middle;
+                            }
+                            .social-media a:hover {
+                                background-color: #e6b800;
+                            }
+                            @media screen and (max-width: 600px) {
+                                .container {
+                                    margin: 10px;
+                                    padding: 15px;
+                                }
+                                .header {
+                                    padding: 15px;
+                                }
+                                .header img {
+                                    max-width: 120px;
+                                }
+                                .content {
+                                    padding: 15px;
+                                }
+                                .action-button {
+                                    padding: 10px 20px;
+                                    font-size: 14px;
+                                }
+                                .social-media a {
+                                    width: 28px;
+                                    height: 28px;
+                                    line-height: 28px;
+                                }
+                                .social-media img {
+                                    width: 18px;
+                                    height: 18px;
+                                }
+                            }
+                        </style>
                     </head>
                     <body>
                         <div class="container">
@@ -592,20 +675,157 @@ public class DataInitializer implements CommandLineRunner {
                             <div class="footer">
                                 <p>Enviado desde Artiles Photography Studio</p>
                                 <p><a href="https://artilesphotography.com">artilesphotography.com</a></p>
-                                %s
+                                <div class="social-media">
+                                    """ + socialMediaLinks.toString() + """
+                                </div>
                             </div>
                         </div>
                     </body>
-                    </html>
-                    """.formatted(commonStyles, socialMediaLinks);
+                    </html>""";
 
+            // Plantilla 2: CONTACT_MESSAGE_CLIENT
             String contactMessageClientTemplate = """
                     <!DOCTYPE html>
                     <html>
                     <head>
                         <meta charset="UTF-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <style>%s</style>
+                        <style>
+                            body {
+                                font-family: 'Helvetica Neue', 'Arial', 'Verdana', sans-serif;
+                                color: #333;
+                                line-height: 1.6;
+                                margin: 0;
+                                padding: 0;
+                                background-color: #f4f4f4;
+                            }
+                            .container {
+                                max-width: 600px;
+                                margin: 20px auto;
+                                padding: 20px;
+                                border: 2px solid #e0e0e0;
+                                border-radius: 12px;
+                                background-color: #f9f9f9;
+                                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                            }
+                            .header {
+                                background-color: #333333;
+                                color: white;
+                                padding: 20px;
+                                text-align: center;
+                                border-radius: 10px 10px 0 0;
+                            }
+                            .header img {
+                                max-width: 160px;
+                                height: auto;
+                                margin-bottom: 10px;
+                            }
+                            .content {
+                                padding: 25px;
+                                background-color: white;
+                                border-radius: 0 0 10px 10px;
+                            }
+                            .greeting {
+                                margin-bottom: 20px;
+                                font-size: 16px;
+                                font-weight: 500;
+                            }
+                            .field {
+                                margin-bottom: 20px;
+                            }
+                            .field-label {
+                                font-weight: bold;
+                                color: #444;
+                                display: flex;
+                                align-items: center;
+                            }
+                            .field-label::before {
+                                content: '📷';
+                                margin-right: 8px;
+                                font-size: 16px;
+                            }
+                            .field-value {
+                                margin: 5px 0 0 24px;
+                                color: #555;
+                            }
+                            .action-button {
+                                display: inline-block;
+                                padding: 12px 24px;
+                                margin-top: 20px;
+                                background-color: #e6b800;
+                                color: white;
+                                text-decoration: none;
+                                border-radius: 8px;
+                                font-size: 16px;
+                                font-weight: 600;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                                transition: background-color 0.3s ease, transform 0.2s ease;
+                            }
+                            .action-button:hover {
+                                background-color: #cc9900;
+                                transform: translateY(-2px);
+                            }
+                            .footer {
+                                text-align: center;
+                                margin-top: 25px;
+                                font-size: 12px;
+                                color: #777;
+                            }
+                            .footer a {
+                                color: #e6b800;
+                                text-decoration: none;
+                            }
+                            .footer a:hover {
+                                text-decoration: underline;
+                            }
+                            .social-media a {
+                                display: inline-block;
+                                margin: 0 8px;
+                                width: 32px;
+                                height: 32px;
+                                background-color: #333333;
+                                border-radius: 50%;
+                                text-align: center;
+                                line-height: 32px;
+                                transition: background-color 0.3s ease;
+                            }
+                            .social-media img {
+                                width: 20px;
+                                height: 20px;
+                                vertical-align: middle;
+                            }
+                            .social-media a:hover {
+                                background-color: #e6b800;
+                            }
+                            @media screen and (max-width: 600px) {
+                                .container {
+                                    margin: 10px;
+                                    padding: 15px;
+                                }
+                                .header {
+                                    padding: 15px;
+                                }
+                                .header img {
+                                    max-width: 120px;
+                                }
+                                .content {
+                                    padding: 15px;
+                                }
+                                .action-button {
+                                    padding: 10px 20px;
+                                    font-size: 14px;
+                                }
+                                .social-media a {
+                                    width: 28px;
+                                    height: 28px;
+                                    line-height: 28px;
+                                }
+                                .social-media img {
+                                    width: 18px;
+                                    height: 18px;
+                                }
+                            }
+                        </style>
                     </head>
                     <body>
                         <div class="container">
@@ -633,21 +853,158 @@ public class DataInitializer implements CommandLineRunner {
                             <div class="footer">
                                 <p>Artiles Photography Studio</p>
                                 <p><a href="https://artilesphotography.com">artilesphotography.com</a></p>
-                                %s
-                            </div>
-                        </div>
-                    </body>
-                    </html>
-                    """
-                    .formatted(commonStyles, socialMediaLinks);
+                                <div class="social-media">
+                                    """
+                    + socialMediaLinks.toString() + """
+                                        </div>
+                                    </div>
+                                </div>
+                            </body>
+                            </html>""";
 
+            // Plantilla 3: CUSTOM_EMAIL
             String customEmailTemplate = """
                     <!DOCTYPE html>
                     <html>
                     <head>
                         <meta charset="UTF-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <style>%s</style>
+                        <style>
+                            body {
+                                font-family: 'Helvetica Neue', 'Arial', 'Verdana', sans-serif;
+                                color: #333;
+                                line-height: 1.6;
+                                margin: 0;
+                                padding: 0;
+                                background-color: #f4f4f4;
+                            }
+                            .container {
+                                max-width: 600px;
+                                margin: 20px auto;
+                                padding: 20px;
+                                border: 2px solid #e0e0e0;
+                                border-radius: 12px;
+                                background-color: #f9f9f9;
+                                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                            }
+                            .header {
+                                background-color: #333333;
+                                color: white;
+                                padding: 20px;
+                                text-align: center;
+                                border-radius: 10px 10px 0 0;
+                            }
+                            .header img {
+                                max-width: 160px;
+                                height: auto;
+                                margin-bottom: 10px;
+                            }
+                            .content {
+                                padding: 25px;
+                                background-color: white;
+                                border-radius: 0 0 10px 10px;
+                            }
+                            .greeting {
+                                margin-bottom: 20px;
+                                font-size: 16px;
+                                font-weight: 500;
+                            }
+                            .field {
+                                margin-bottom: 20px;
+                            }
+                            .field-label {
+                                font-weight: bold;
+                                color: #444;
+                                display: flex;
+                                align-items: center;
+                            }
+                            .field-label::before {
+                                content: '📷';
+                                margin-right: 8px;
+                                font-size: 16px;
+                            }
+                            .field-value {
+                                margin: 5px 0 0 24px;
+                                color: #555;
+                            }
+                            .action-button {
+                                display: inline-block;
+                                padding: 12px 24px;
+                                margin-top: 20px;
+                                background-color: #e6b800;
+                                color: white;
+                                text-decoration: none;
+                                border-radius: 8px;
+                                font-size: 16px;
+                                font-weight: 600;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                                transition: background-color 0.3s ease, transform 0.2s ease;
+                            }
+                            .action-button:hover {
+                                background-color: #cc9900;
+                                transform: translateY(-2px);
+                            }
+                            .footer {
+                                text-align: center;
+                                margin-top: 25px;
+                                font-size: 12px;
+                                color: #777;
+                            }
+                            .footer a {
+                                color: #e6b800;
+                                text-decoration: none;
+                            }
+                            .footer a:hover {
+                                text-decoration: underline;
+                            }
+                            .social-media a {
+                                display: inline-block;
+                                margin: 0 8px;
+                                width: 32px;
+                                height: 32px;
+                                background-color: #333333;
+                                border-radius: 50%;
+                                text-align: center;
+                                line-height: 32px;
+                                transition: background-color 0.3s ease;
+                            }
+                            .social-media img {
+                                width: 20px;
+                                height: 20px;
+                                vertical-align: middle;
+                            }
+                            .social-media a:hover {
+                                background-color: #e6b800;
+                            }
+                            @media screen and (max-width: 600px) {
+                                .container {
+                                    margin: 10px;
+                                    padding: 15px;
+                                }
+                                .header {
+                                    padding: 15px;
+                                }
+                                .header img {
+                                    max-width: 120px;
+                                }
+                                .content {
+                                    padding: 15px;
+                                }
+                                .action-button {
+                                    padding: 10px 20px;
+                                    font-size: 14px;
+                                }
+                                .social-media a {
+                                    width: 28px;
+                                    height: 28px;
+                                    line-height: 28px;
+                                }
+                                .social-media img {
+                                    width: 18px;
+                                    height: 18px;
+                                }
+                            }
+                        </style>
                     </head>
                     <body>
                         <div class="container">
@@ -671,21 +1028,158 @@ public class DataInitializer implements CommandLineRunner {
                             <div class="footer">
                                 <p>Artiles Photography Studio</p>
                                 <p><a href="https://artilesphotography.com">artilesphotography.com</a></p>
-                                %s
-                            </div>
-                        </div>
-                    </body>
-                    </html>
-                    """
-                    .formatted(commonStyles, socialMediaLinks);
+                                <div class="social-media">
+                                    """
+                    + socialMediaLinks.toString() + """
+                                        </div>
+                                    </div>
+                                </div>
+                            </body>
+                            </html>""";
 
+            // Plantilla 4: APPOINTMENT_REMINDER
             String appointmentReminderTemplate = """
                     <!DOCTYPE html>
                     <html>
                     <head>
                         <meta charset="UTF-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <style>%s</style>
+                        <style>
+                            body {
+                                font-family: 'Helvetica Neue', 'Arial', 'Verdana', sans-serif;
+                                color: #333;
+                                line-height: 1.6;
+                                margin: 0;
+                                padding: 0;
+                                background-color: #f4f4f4;
+                            }
+                            .container {
+                                max-width: 600px;
+                                margin: 20px auto;
+                                padding: 20px;
+                                border: 2px solid #e0e0e0;
+                                border-radius: 12px;
+                                background-color: #f9f9f9;
+                                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                            }
+                            .header {
+                                background-color: #333333;
+                                color: white;
+                                padding: 20px;
+                                text-align: center;
+                                border-radius: 10px 10px 0 0;
+                            }
+                            .header img {
+                                max-width: 160px;
+                                height: auto;
+                                margin-bottom: 10px;
+                            }
+                            .content {
+                                padding: 25px;
+                                background-color: white;
+                                border-radius: 0 0 10px 10px;
+                            }
+                            .greeting {
+                                margin-bottom: 20px;
+                                font-size: 16px;
+                                font-weight: 500;
+                            }
+                            .field {
+                                margin-bottom: 20px;
+                            }
+                            .field-label {
+                                font-weight: bold;
+                                color: #444;
+                                display: flex;
+                                align-items: center;
+                            }
+                            .field-label::before {
+                                content: '📷';
+                                margin-right: 8px;
+                                font-size: 16px;
+                            }
+                            .field-value {
+                                margin: 5px 0 0 24px;
+                                color: #555;
+                            }
+                            .action-button {
+                                display: inline-block;
+                                padding: 12px 24px;
+                                margin-top: 20px;
+                                background-color: #e6b800;
+                                color: white;
+                                text-decoration: none;
+                                border-radius: 8px;
+                                font-size: 16px;
+                                font-weight: 600;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                                transition: background-color 0.3s ease, transform 0.2s ease;
+                            }
+                            .action-button:hover {
+                                background-color: #cc9900;
+                                transform: translateY(-2px);
+                            }
+                            .footer {
+                                text-align: center;
+                                margin-top: 25px;
+                                font-size: 12px;
+                                color: #777;
+                            }
+                            .footer a {
+                                color: #e6b800;
+                                text-decoration: none;
+                            }
+                            .footer a:hover {
+                                text-decoration: underline;
+                            }
+                            .social-media a {
+                                display: inline-block;
+                                margin: 0 8px;
+                                width: 32px;
+                                height: 32px;
+                                background-color: #333333;
+                                border-radius: 50%;
+                                text-align: center;
+                                line-height: 32px;
+                                transition: background-color 0.3s ease;
+                            }
+                            .social-media img {
+                                width: 20px;
+                                height: 20px;
+                                vertical-align: middle;
+                            }
+                            .social-media a:hover {
+                                background-color: #e6b800;
+                            }
+                            @media screen and (max-width: 600px) {
+                                .container {
+                                    margin: 10px;
+                                    padding: 15px;
+                                }
+                                .header {
+                                    padding: 15px;
+                                }
+                                .header img {
+                                    max-width: 120px;
+                                }
+                                .content {
+                                    padding: 15px;
+                                }
+                                .action-button {
+                                    padding: 10px 20px;
+                                    font-size: 14px;
+                                }
+                                .social-media a {
+                                    width: 28px;
+                                    height: 28px;
+                                    line-height: 28px;
+                                }
+                                .social-media img {
+                                    width: 18px;
+                                    height: 18px;
+                                }
+                            }
+                        </style>
                     </head>
                     <body>
                         <div class="container">
@@ -717,12 +1211,13 @@ public class DataInitializer implements CommandLineRunner {
                             <div class="footer">
                                 <p>Artiles Photography Studio</p>
                                 <p><a href="https://artilesphotography.com">artilesphotography.com</a></p>
-                                %s
+                                <div class="social-media">
+                                    """ + socialMediaLinks.toString() + """
+                                </div>
                             </div>
                         </div>
                     </body>
-                    </html>
-                    """.formatted(commonStyles, socialMediaLinks);
+                    </html>""";
 
             List<EmailTemplate> templates = Arrays.asList(
                     new EmailTemplate(null, "CONTACT_MESSAGE_COMPANY",
@@ -733,7 +1228,8 @@ public class DataInitializer implements CommandLineRunner {
                             "Confirmación de mensaje de contacto para el cliente",
                             "Confirmación de Mensaje - Artiles Photography Studio",
                             contactMessageClientTemplate, LocalDateTime.now(), null),
-                    new EmailTemplate(null, "CUSTOM_EMAIL", "Plantilla para correos personalizados",
+                    new EmailTemplate(null, "CUSTOM_EMAIL",
+                            "Plantilla para correos personalizados",
                             "Correo Personalizado",
                             customEmailTemplate, LocalDateTime.now(), null),
                     new EmailTemplate(null, "APPOINTMENT_REMINDER",

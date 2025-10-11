@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.artiles_photography_backend.dtos.ConfigurationResponse;
@@ -74,6 +75,7 @@ public class EmailService {
 		this.configurationService = configurationService;
 	}
 
+	@Async
 	public void sendContactEmail(ContactMessage message) throws MessagingException {
 		ContactInfoResponse contactInfo = getContactInfo();
 		String logoUrl = getLogoUrl();
